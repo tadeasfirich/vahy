@@ -1,0 +1,2914 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rovnice na vahách</title>
+<style>
+:root{
+  --k:#2A4B9B; --t:#14171f; --m:#5a6172; --l:#b9c0ce; --b:#eef1f7; --p:#ffffff; --n:#9fb2e8;
+  --pismo:"Carlito","Calibri","DejaVu Sans",system-ui,sans-serif;
+  --mono:"DejaVu Sans Mono","Consolas",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font:17px/1.45 var(--pismo);color:var(--t);background:var(--p);text-align:left}
+p{margin:0}
+[hidden]{display:none !important}
+#app{display:flex;flex-direction:column;height:100vh;min-height:100%;max-width:1560px;margin:0 auto;padding:8px 20px 10px}
+
+/* ---------- záhlaví ---------- */
+.zahlavi{display:flex;align-items:flex-end;gap:6px 18px;flex-wrap:wrap;border-bottom:2.5px solid var(--t);padding-bottom:5px}
+.popisek{font:700 11.5px/1.2 var(--mono);letter-spacing:.14em;color:var(--k);text-transform:uppercase;margin-bottom:1px}
+h1{font-size:23px;line-height:1.15;margin:0;font-weight:700}
+.etapy{display:flex;gap:0;margin-left:auto;align-items:center}
+.etapy button{width:44px;min-height:44px;padding:0;border:0;background:none;display:flex;align-items:center;justify-content:center}
+.etapy button span{width:30px;height:30px;border-radius:50%;border:1px solid var(--t);display:flex;align-items:center;justify-content:center;font:700 14px/1 var(--mono);background:var(--p);color:var(--t)}
+.etapy button.hotova span{background:var(--t);color:var(--p)}
+.etapy button.nyni span{background:var(--k);border-color:var(--k);color:var(--p);box-shadow:0 0 0 2px var(--p),0 0 0 3.5px var(--k)}
+.etapy button.rozs span{border-style:dashed}
+.etapy button.rozs.hotova span,.etapy button.rozs.nyni span{border-style:solid}
+.etapy button:disabled span{border-color:var(--l);color:var(--m)}
+.etapy .delic{width:1px;height:26px;background:var(--l);margin:0 3px}
+.rezim{display:flex;gap:10px;list-style:none;margin:0;padding:0 0 9px;font:700 11.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--m)}
+.rezim li{display:flex;align-items:center;gap:5px}
+.rezim i{width:12px;height:12px;border:1px solid var(--m);display:block}
+.rezim li.on{color:var(--t)}
+.rezim li.on i{background:var(--k);border-color:var(--k)}
+.odkazy{display:flex;gap:8px;padding-bottom:1px}
+.etapy[hidden] ~ .odkazy{margin-left:auto}
+
+/* ---------- tlačítka a vstupy ---------- */
+button{font:inherit;color:var(--t);cursor:pointer}
+.tl{min-height:44px;min-width:44px;padding:0 14px;border:1px solid var(--t);border-radius:2px;background:var(--p);line-height:1.2}
+.tl.maly{padding:0 10px}
+.tl.hlavni{background:var(--k);border-color:var(--k);color:var(--p);font-weight:700}
+.tl[aria-pressed="true"]{background:var(--t);color:var(--p)}
+.tl:disabled{border-color:var(--l);color:var(--m);cursor:default;background:var(--p)}
+.tl.tichy{border-color:var(--l)}
+:focus-visible{outline:2.5px solid var(--k);outline-offset:2px}
+input[type=text],textarea{font:20px/1.3 var(--mono);color:var(--t);border:1px solid var(--t);border-radius:2px;background:var(--p);min-height:44px;padding:4px 8px}
+textarea{font:17px/1.45 var(--pismo);width:100%;resize:vertical;min-height:70px}
+input.kratky{width:86px;text-align:center}
+label.zatrh{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding-right:6px}
+label.zatrh input{width:20px;height:20px;accent-color:var(--k)}
+
+/* ---------- pohledy ---------- */
+#obsah{flex:1;min-height:0;display:flex;flex-direction:column}
+.pohled{flex:1;min-height:0}
+.box{border:1px solid var(--l);border-radius:2px;background:var(--b);padding:10px 14px}
+.tmavy{background:var(--t);color:var(--p);border:1px solid var(--t);border-radius:2px;padding:16px 20px}
+.tmavy h2{color:var(--n);font:700 12px/1.2 var(--mono);letter-spacing:.14em;text-transform:uppercase;margin:0 0 8px}
+.tmavy .tl{border-color:var(--p)}
+.tmavy .tl.hlavni{background:var(--p);color:var(--t);border-color:var(--p)}
+.nadpisek{font:700 11.5px/1.2 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--k);margin-bottom:4px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.uvod{display:flex;align-items:center;justify-content:center}
+.uvod .tmavy{max-width:560px;width:100%}
+.uvod .velke{font-size:26px;line-height:1.25;font-weight:700;margin-bottom:8px}
+.uvod .rada{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+
+/* ---------- pracovní plocha ---------- */
+.plocha{display:grid;gap:8px 16px;padding-top:8px;
+  grid-template-columns:minmax(0,1.62fr) minmax(310px,1fr);
+  grid-template-rows:auto minmax(0,1fr) auto auto;
+  grid-template-areas:"ukol zapisnik" "vahy zapisnik" "vahy pruvodce" "ovladani pruvodce"}
+.ukol{grid-area:ukol;min-height:92px}
+.vahyBox{grid-area:vahy;min-height:150px;display:flex;flex-direction:column;position:relative}
+.ovladani{grid-area:ovladani}
+.zapisnik{grid-area:zapisnik;min-height:0;overflow:auto;background:var(--p)}
+.pruvodce{grid-area:pruvodce;min-height:132px}
+.plocha.bezvah{grid-template-rows:auto minmax(0,1fr);grid-template-areas:"ukol pruvodce" "zapisnik pruvodce"}
+.plocha.bezvah .vahyBox,.plocha.bezvah .ovladani{display:none}
+.plocha.bezvah .pruvodce{align-self:start}
+.plocha.volne .pruvodce{display:none}
+.plocha.volne{grid-template-areas:"ukol zapisnik" "vahy zapisnik" "vahy zapisnik" "ovladani zapisnik"}
+
+.ukol .zadani{max-width:62ch}
+.ukol .rada{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.ukol .rada .stitekPole{font:15px/1.2 var(--mono);color:var(--m)}
+.ukol .vysledek{margin-top:8px;font-weight:700}
+.ukol.tmavyUkol{background:var(--t);border-color:var(--t);color:var(--p)}
+.ukol.tmavyUkol .nadpisek{color:var(--n)}
+.ukol.tmavyUkol .tl{border-color:var(--p)}
+.ukol.tmavyUkol .tl.hlavni{background:var(--p);color:var(--t)}
+.poznamka{font-size:15px;color:var(--m);margin-top:6px}
+.serie{display:inline-flex;gap:4px;margin-left:8px;vertical-align:middle}
+.serie i{width:12px;height:12px;border:1px solid var(--t);display:block}
+.serie i.on{background:var(--t)}
+.ucitelBar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--l)}
+
+.vahy{flex:1;min-height:0;width:100%;display:block;user-select:none;-webkit-user-select:none}
+.stitek{position:absolute;left:0;top:0;font:700 11.5px/1.2 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--k);background:var(--p);padding:2px 6px 2px 0}
+.stavVah{font:15px/1.3 var(--mono);color:var(--m);min-height:20px;margin-left:auto;text-align:right}
+.radek1{display:flex;gap:4px 16px;flex-wrap:wrap;align-items:baseline;margin-bottom:5px}
+.hodnotaX{font:700 20px var(--mono);min-width:22px;text-align:center}
+.stitekPole{font:15px/1.2 var(--mono);color:var(--m)}
+.rameno{stroke:var(--t);stroke-width:3.5;stroke-linecap:round}
+.rameno.zadni{stroke-width:2.5;stroke-dasharray:9 6}
+.stojan{stroke:var(--t);stroke-width:1.5;fill:var(--p);stroke-linejoin:round}
+.podpera{stroke:var(--m);stroke-width:1.5}
+.cep{fill:var(--t)}
+.hacek,.lanko{stroke:var(--m);stroke-width:1.2}
+.cislo{font:700 13px var(--mono);fill:var(--m);text-anchor:middle}
+.zav{cursor:grab;touch-action:none}
+.zav circle,.zav polygon,.zav rect{fill:var(--p);stroke:var(--t);stroke-width:1.8;stroke-linejoin:round}
+.zav text{font:700 13.5px var(--mono);fill:var(--t);text-anchor:middle;pointer-events:none}
+.zav-L rect{fill:var(--k);stroke:var(--k)}
+.zav-L text{fill:var(--p)}
+.zav.vybrane circle,.zav.vybrane polygon,.zav.vybrane rect{stroke:var(--k);stroke-width:4}
+.zav-L.vybrane rect{stroke:var(--t)}
+.zav.duch{cursor:default}
+.zav.duch circle,.zav.duch polygon,.zav.duch rect{fill:none;stroke:var(--m);stroke-width:1.4;stroke-dasharray:3 3}
+.zav.duch text{fill:var(--m)}
+.pevne .zav{cursor:default}
+.zona{fill:var(--p);fill-opacity:0;stroke:none}
+.kolik{cursor:pointer;outline:none}
+.kolik:focus-visible .zona{stroke:var(--k);stroke-width:2.5}
+.kolik.cil .zona{fill:var(--b);fill-opacity:1}
+.ucinekText{font:700 15px var(--mono);fill:var(--t);text-anchor:middle}
+
+.ovladani .pocitadlo{font:700 16px/1.3 var(--mono);min-height:22px}
+.ovladani .rada{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.zasobnik{display:flex;gap:6px;padding-right:10px;margin-right:2px;border-right:1px solid var(--l)}
+.zasobnik .tl{padding:0;width:48px;height:48px;touch-action:none}
+.zasobnik svg{width:38px;height:38px;display:block;margin:auto;pointer-events:none}
+.zasobnik .tl[aria-pressed="true"]{background:var(--b);box-shadow:inset 0 0 0 2.5px var(--k);border-color:var(--k)}
+#duch{position:fixed;left:0;top:0;width:44px;height:44px;margin:-22px 0 0 -22px;pointer-events:none;display:none;z-index:9}
+#duch svg{width:44px;height:44px}
+
+.radky{list-style:none;margin:0;padding:0}
+.radky li{font:20px/1.35 var(--mono);padding:5px 0;border-bottom:1px solid var(--b);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.radky .upr{color:var(--k);white-space:nowrap}
+.radky li.zk{color:var(--m);font-size:17px}
+.novy{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.vstupRadek{flex:1;min-width:150px;width:100%}
+.vstupUpr{width:104px}
+.reseni{margin-top:10px;padding-top:8px;border-top:1px dashed var(--m);font:15px/1.5 var(--mono);color:var(--m)}
+
+.pruvodce{border:1px solid var(--l);border-radius:2px;padding:10px 14px;display:flex;flex-direction:column;gap:8px}
+.otazka{border-left:2.5px solid var(--k);padding-left:12px;font-style:italic;max-width:56ch}
+.volby{display:flex;gap:8px;flex-wrap:wrap}
+.volby .tl{font-family:var(--mono)}
+.nabidka{color:var(--m);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pruvodce .dole{margin-top:auto;display:flex;gap:8px;flex-wrap:wrap}
+
+/* ---------- závěr a o aplikaci ---------- */
+.zaver,.oapl,.export{overflow:auto;padding:12px 0}
+.zaver .obal,.oapl .obal,.export .obal{max-width:860px;display:grid;gap:12px}
+.export input[type=text]{font:20px/1.3 var(--pismo);width:100%;max-width:420px;display:block;margin-top:6px}
+.skala{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.skala .tl{font:700 18px var(--mono);padding:0;width:48px}
+.export a.tl{display:inline-flex;align-items:center;text-decoration:none;color:var(--t)}
+.rada{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.naSirku{display:none;font-size:15px;color:var(--m);padding:6px 0 0}
+.prehled{list-style:none;margin:0;padding:0;columns:2;column-gap:28px}
+.prehled li{display:flex;gap:10px;align-items:center;padding:4px 0;break-inside:avoid;border-bottom:1px solid var(--b)}
+.prehled .zn{width:16px;height:16px;border:1.5px solid var(--t);flex:none}
+.prehled .zn.sam{background:var(--t)}
+.prehled .zn.otazky,.prehled .zn.opora{background:linear-gradient(90deg,var(--t) 50%,var(--p) 50%)}
+.prehled .st{margin-left:auto;font:14px var(--mono);color:var(--m);text-align:right}
+.oapl p{max-width:66ch}
+h2{font-size:20px;margin:0;line-height:1.25}
+
+@media (max-width:980px){
+  #app{height:auto;padding:8px 12px 16px}
+  .etapy{margin-left:0;flex-wrap:wrap}
+  .plocha,.plocha.bezvah,.plocha.volne{display:flex;flex-direction:column}
+  .ukol{order:1}.ovladani{order:2}.vahyBox{order:3}.pruvodce{order:4}.zapisnik{order:5;max-height:none}
+  .vahy{flex:none;height:auto;min-height:120px;max-height:calc(100vh - 118px)}
+  .prehled{columns:1}
+}
+@media (max-width:600px) and (orientation:portrait){.naSirku{display:block}}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="zahlavi">
+    <div class="znacka">
+      <p class="popisek">MATEMATIKA · 9. ROČNÍK · ROVNICE</p>
+      <h1>Rovnice na vahách</h1>
+    </div>
+    <nav class="etapy" id="etapy" aria-label="Etapy"></nav>
+    <ul class="rezim" id="rezim" aria-label="Režim opory"></ul>
+    <div class="odkazy" id="odkazy"></div>
+  </header>
+  <main id="obsah">
+    <p class="naSirku">Na telefonu otoč displej na šířku. Váhy budou větší.</p>
+    <section id="uvod" class="pohled uvod" hidden></section>
+    <section id="plocha" class="pohled plocha" hidden>
+      <div id="ukol" class="box ukol"></div>
+      <div id="vahyBox" class="vahyBox">
+        <p id="stitek" class="stitek" hidden></p>
+        <svg id="vahy" class="vahy" role="group" aria-label="Váhy" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <div id="ovladani" class="ovladani">
+        <div class="radek1"><p class="pocitadlo" id="pocitadlo"></p><p id="stavVah" class="stavVah" aria-live="polite"></p></div>
+        <div class="rada" id="ovlRada"></div>
+      </div>
+      <section id="zapisnik" class="box zapisnik" aria-label="Zápisník"></section>
+      <section id="pruvodce" class="pruvodce" aria-label="Průvodce">
+        <p class="nadpisek">Průvodce</p>
+        <div id="rec" aria-live="polite"></div>
+        <div id="recVolby"></div>
+        <div id="recDole" class="dole"></div>
+      </section>
+    </section>
+    <section id="zaver" class="pohled zaver" hidden></section>
+    <section id="oapl" class="pohled oapl" hidden></section>
+    <section id="export" class="pohled export" hidden></section>
+  </main>
+</div>
+<div id="duch" aria-hidden="true"></div>
+<script>
+(function () {
+'use strict';
+
+/* =====================================================================
+   KONFIGURACE
+   ===================================================================== */
+var KONF = {
+  verze: 1,
+  klic: 'rovnice-na-vahach-v1',   // klíč v localStorage (obsahuje verzi)
+  oddelovac: '|',                 // znak před úpravou; jde změnit na '/'
+  maxPozice: 5,                   // kolíky 1 až 5
+  maxNaKoliku: 5,                 // nejvýš 5 závaží pod sebou
+  hmotnosti: { d: 1, t: 3, h: 6 },// disk ; trojúhelník ; šestiúhelník
+  uhel: 7,                        // náklon puštěných vah ve stupních
+  uhelZapor: 4,                   // menší náklon, když je vidět i záporné rameno
+  animace: 450,                   // délka náklonu v ms
+  krokUkazky: 800,                // prodleva mezi kroky, které dělá aplikace
+  necinnost: 75000,               // po kolika ms nečinnosti se průvodce nabídne
+  pauza: 90000,                   // delší mezera mezi akcemi se do času práce nepočítá
+  exportCas: true,                // má být v PDF čas práce (v aplikaci se čas neukazuje)
+  barvy: { k: '#2A4B9B', t: '#14171f', m: '#5a6172', l: '#b9c0ce', b: '#eef1f7', p: '#ffffff', n: '#9fb2e8' },
+  maxDvojcat: 2,                  // nejvýš dvě dvojčata, pak postup „s oporou“
+  e2Serie: 3,                     // tolik správných tipů po sobě ukončí E2
+  e2Max: 8                        // po tolika vahách E2 skončí vždy
+};
+
+/* =====================================================================
+   DATA: etapy, úlohy, texty průvodce
+   Učitel může upravovat ručně. Závaží: d disk (1) ; t trojúhelník (3) ;
+   h šestiúhelník (6) ; L záhadné závaží. p = pozice, n = počet.
+   ===================================================================== */
+var ETAPY = [
+  { id: 'e1',  nazev: 'Háček: ověř svůj tip' },
+  { id: 'e2',  nazev: 'Účinek' },
+  { id: 'e3',  nazev: 'Stejně na obě strany' },
+  { id: 'e4',  nazev: 'Kolik váží L' },
+  { id: 'e5',  nazev: 'L na obou stranách' },
+  { id: 'e6',  nazev: 'Od vah k zápisu' },
+  { id: 'e7',  nazev: 'Záporné pozice',   rozsireni: true, obtiznost: 'střední' },
+  { id: 'e8',  nazev: 'Závorka na háčku', rozsireni: true, obtiznost: 'střední' },
+  { id: 'e9',  nazev: 'Zvláštní váhy',    rozsireni: true, obtiznost: 'těžké' },
+  { id: 'e10', nazev: 'Bez vah',          rozsireni: true, obtiznost: 'těžké' }
+];
+
+/* Pole úloh. Společné klíče:
+   id, etapa, obtiznost, typ (pokus ; veta ; res ; zapis ; zvlastni),
+   leva, prava (pozice p, typ t, počet n), x (skrytá hmotnost L),
+   opora (ukazka ; spolu ; sam), zasobnik (povolená závaží), zamceno (nejde stavět).
+   brana: true = samostatná úloha, která rozhoduje o konci etapy.
+   vzor = podle čeho se generují dvojčata. */
+var ULOHY = [
+  /* ---------- E1 Háček ---------- */
+  { id: 'e1a', etapa: 'e1', obtiznost: 'základní', typ: 'pokus', opora: 'spolu', x: 4,
+    leva: [{ p: 1, t: 'L', n: 1 }, { p: 5, t: 'd', n: 1 }],
+    prava: [{ p: 2, t: 'L', n: 1 }, { p: 1, t: 'd', n: 1 }],
+    zasobnik: ['d'],
+    text: 'Váhy stojí rovně. Na obě strany přidáš disk na pozici 2. Tipni, co udělají váhy. Pak disky přidej a váhy pusť.',
+    cil: { pridej: { leva: [{ p: 2, t: 'd', n: 1 }], prava: [{ p: 2, t: 'd', n: 1 }] } },
+    nesplneno: 'Úkol chce disk na pozici 2 vlevo i vpravo. Co na vahách ještě chybí?',
+    napovedy: ['Jaký účinek má disk na pozici 2?',
+               'O kolik se změní účinek vlevo? O kolik vpravo?',
+               'Klikni na disk v zásobníku a potom na kolík 2 vlevo. Co uděláš vpravo?'] },
+  { id: 'e1b', etapa: 'e1', obtiznost: 'základní', typ: 'pokus', opora: 'spolu', x: 4,
+    leva: [{ p: 1, t: 'L', n: 1 }, { p: 5, t: 'd', n: 1 }],
+    prava: [{ p: 2, t: 'L', n: 1 }, { p: 1, t: 'd', n: 1 }],
+    zasobnik: ['d'],
+    text: 'Váhy jsou zpět na začátku. Teď přidej disk na pozici 2 jen vlevo. Tipni a pusť váhy.',
+    cil: { pridej: { leva: [{ p: 2, t: 'd', n: 1 }], prava: [] } },
+    nesplneno: 'Úkol chce jeden disk na pozici 2 jen vlevo. Co je na vahách jinak?',
+    napovedy: ['Která strana dostane účinek navíc?',
+               'O kolik bude levá strana těžší než pravá?'] },
+  { id: 'e1c', etapa: 'e1', obtiznost: 'základní', typ: 'veta', opora: 'spolu', x: 4,
+    leva: [{ p: 1, t: 'L', n: 1 }, { p: 5, t: 'd', n: 1 }],
+    prava: [{ p: 2, t: 'L', n: 1 }, { p: 1, t: 'd', n: 1 }],
+    zasobnik: ['d', 't', 'h'],
+    text: 'Doplň větu. Když si nejsi jistý(á), zkus to znovu na vahách.',
+    veta: 'Když na obě strany přidám stejný účinek, váhy …',
+    moznosti: ['klesnou vlevo', 'zůstanou rovně', 'klesnou vpravo'], spravne: 1,
+    poSpatne: 'Přidej na obě strany stejný účinek a pusť váhy. Co udělaly?',
+    napovedy: ['Co udělaly váhy v prvním pokusu, když jsi přidal(a) disk vlevo i vpravo?',
+               'Přidej na obě strany stejný účinek a pusť váhy. Co udělaly?'] },
+
+  /* ---------- E2 Účinek ---------- */
+  { id: 'e2a', etapa: 'e2', obtiznost: 'základní', typ: 'pokus', opora: 'sam', x: 1, zamceno: true, ucinky: true,
+    leva: [{ p: 4, t: 'd', n: 1 }], prava: [{ p: 1, t: 't', n: 1 }, { p: 1, t: 'd', n: 1 }],
+    text: 'Spočítej účinek vlevo a vpravo. Tipni, co udělají váhy, a pusť je.' },
+  { id: 'e2b', etapa: 'e2', obtiznost: 'základní', typ: 'pokus', opora: 'sam', x: 1, zamceno: true, ucinky: true,
+    leva: [{ p: 3, t: 't', n: 1 }], prava: [{ p: 1, t: 'h', n: 1 }, { p: 2, t: 'd', n: 1 }],
+    text: 'Spočítej účinek vlevo a vpravo. Tipni, co udělají váhy, a pusť je.' },
+  { id: 'e2c', etapa: 'e2', obtiznost: 'základní', typ: 'pokus', opora: 'sam', x: 1, zamceno: true, ucinky: true,
+    leva: [{ p: 2, t: 'h', n: 1 }], prava: [{ p: 4, t: 't', n: 1 }],
+    text: 'Spočítej účinek vlevo a vpravo. Tipni, co udělají váhy, a pusť je.' },
+
+  /* ---------- E3 Stejně na obě strany ---------- */
+  { id: 'e3a', etapa: 'e3', obtiznost: 'základní', typ: 'pokus', opora: 'spolu', x: 1,
+    leva: [{ p: 4, t: 'd', n: 1 }], prava: [{ p: 1, t: 'd', n: 1 }, { p: 3, t: 'd', n: 1 }],
+    zasobnik: ['d', 't', 'h'],
+    text: 'Přidej na obě strany trojúhelník na pozici 1. Tipni, co udělají váhy, a pusť je.',
+    cil: { pridej: { leva: [{ p: 1, t: 't', n: 1 }], prava: [{ p: 1, t: 't', n: 1 }] } },
+    nesplneno: 'Úkol chce trojúhelník na pozici 1 vlevo i vpravo. Co na vahách ještě chybí?',
+    napovedy: ['Jaký účinek má trojúhelník na pozici 1?',
+               'O kolik se změní levá strana? O kolik pravá?'] },
+  { id: 'e3b', etapa: 'e3', obtiznost: 'základní', typ: 'pokus', opora: 'spolu', x: 1, tip: false,
+    leva: [{ p: 4, t: 'd', n: 1 }, { p: 1, t: 't', n: 1 }],
+    prava: [{ p: 1, t: 'd', n: 1 }, { p: 3, t: 'd', n: 1 }, { p: 1, t: 't', n: 1 }],
+    zasobnik: ['d', 't', 'h'],
+    text: 'Uber z obou stran stejný účinek. Závaží sundej, nebo ho posuň blíž ke středu. Pak váhy pusť.',
+    cil: { stejne: true, zmena: 'minus' },
+    nesplneno: 'Sleduj počitadlo změn pod vahami. Co má být vlevo i vpravo stejné?',
+    napovedy: ['Co ukazuje počitadlo změn pod vahami?',
+               'Které závaží má vlevo i vpravo stejný účinek? Co se stane, když obě sundáš?',
+               'O kolik se změní účinek, když disk posuneš o jeden kolík blíž ke středu? Vyzkoušej.'] },
+  { id: 'e3c', etapa: 'e3', obtiznost: 'základní', typ: 'pokus', opora: 'spolu', x: 1,
+    leva: [{ p: 4, t: 'd', n: 1 }], prava: [{ p: 1, t: 'd', n: 1 }, { p: 3, t: 'd', n: 1 }],
+    zasobnik: ['d', 't', 'h'],
+    text: 'Přidej vlevo disk na pozici 2 a vpravo disk na pozici 3. Na obou stranách přibylo stejné závaží. Tipni, co udělají váhy.',
+    cil: { pridej: { leva: [{ p: 2, t: 'd', n: 1 }], prava: [{ p: 3, t: 'd', n: 1 }] } },
+    nesplneno: 'Úkol chce disk vlevo na pozici 2 a vpravo na pozici 3. Co je na vahách jinak?',
+    poHotovo: 'Disk je stejný, ale visí jinde. Jaký má účinek vlevo a jaký vpravo?',
+    napovedy: ['Jaký účinek má disk na pozici 2? A na pozici 3?',
+               'O kolik se změní levá strana? O kolik pravá?'] },
+  { id: 'e3d', etapa: 'e3', obtiznost: 'základní', typ: 'veta', opora: 'spolu', x: 1,
+    leva: [{ p: 4, t: 'd', n: 1 }, { p: 2, t: 'd', n: 1 }],
+    prava: [{ p: 1, t: 'd', n: 1 }, { p: 3, t: 'd', n: 2 }],
+    zasobnik: ['d', 't', 'h'],
+    text: 'Doplň větu podle toho, co jsi právě viděl(a).',
+    veta: 'Aby váhy zůstaly rovně, musí na obou stranách přibýt stejný …',
+    moznosti: ['počet závaží', 'tvar závaží', 'účinek'], spravne: 2,
+    poSpatne: 'Disk je stejný, ale visí jinde. Jaký má účinek vlevo a jaký vpravo?',
+    napovedy: ['Co bylo v minulém pokusu vlevo i vpravo stejné? A co se lišilo?',
+               'Jak se počítá, čím závaží na váhy působí?'] },
+  { id: 'e3e', etapa: 'e3', obtiznost: 'základní', typ: 'pokus', opora: 'sam', x: 1, tip: false,
+    leva: [{ p: 5, t: 'd', n: 1 }], prava: [{ p: 2, t: 'd', n: 1 }, { p: 3, t: 'd', n: 1 }],
+    zasobnik: ['d', 't', 'h'],
+    text: 'Posuň vlevo disk z pozice 5 na pozici 4. Vyrovnej to na pravé straně a pusť váhy.',
+    cil: { leva: [{ p: 4, t: 'd', n: 1 }], stejne: true },
+    nesplneno: 'Vlevo má viset jediný disk na pozici 4. Co musí ubýt vpravo, aby váhy zůstaly rovně?',
+    napovedy: ['O kolik se změnil účinek vlevo, když se disk posunul z 5 na 4?',
+               'Co ukazuje počitadlo změn pod vahami? Co mu chybí vpravo?',
+               'Kterým posunem ubereš vpravo stejný účinek jako vlevo? Vyzkoušej.'] },
+
+  /* ---------- E4 Kolik váží L ---------- */
+  { id: 'e4a', etapa: 'e4', obtiznost: 'základní', typ: 'res', opora: 'spolu', x: 5, surovy: true, skryjUpraveny: true,
+    leva: [{ p: 1, t: 'L', n: 1 }], prava: [{ p: 1, t: 't', n: 1 }, { p: 2, t: 'd', n: 1 }],
+    text: 'Váhy stojí rovně. Kolik váží L? Zapiš číslo a udělej zkoušku.' },
+  { id: 'e4b', etapa: 'e4', obtiznost: 'základní', typ: 'res', opora: 'spolu', x: 4, surovy: true, skryjUpraveny: true,
+    leva: [{ p: 3, t: 'L', n: 1 }], prava: [{ p: 2, t: 'h', n: 1 }],
+    text: 'L visí na pozici 3. Kolik váží jedno L? Zapiš číslo a udělej zkoušku.' },
+  { id: 'e4c', etapa: 'e4', obtiznost: 'základní', typ: 'res', opora: 'sam', x: 4, surovy: true, brana: true, vzor: 'jedna',
+    leva: [{ p: 2, t: 'L', n: 1 }, { p: 3, t: 'd', n: 1 }],
+    prava: [{ p: 5, t: 'd', n: 1 }, { p: 1, t: 'h', n: 1 }],
+    text: 'Kolik váží L? Uprav obě strany stejně, aby L na své straně zůstalo samo. Po každé úpravě váhy pusť.' },
+
+  /* ---------- E5 L na obou stranách ---------- */
+  { id: 'e5a', etapa: 'e5', obtiznost: 'základní', typ: 'res', opora: 'ukazka', x: 4,
+    leva: [{ p: 1, t: 'L', n: 1 }, { p: 5, t: 'd', n: 1 }],
+    prava: [{ p: 2, t: 'L', n: 1 }, { p: 1, t: 'd', n: 1 }],
+    text: 'Sleduj, jak se váhy upravují. Po každém kroku vyber, co z obou stran ubylo.' },
+  { id: 'e5b', etapa: 'e5', obtiznost: 'základní', typ: 'res', opora: 'spolu', x: 5, prvniKrok: true,
+    leva: [{ p: 2, t: 'L', n: 1 }, { p: 3, t: 'd', n: 1 }],
+    prava: [{ p: 1, t: 'L', n: 1 }, { p: 5, t: 'd', n: 1 }, { p: 3, t: 'd', n: 1 }],
+    text: 'První krok udělá aplikace. Zbytek dokonči: uprav obě strany stejně a pusť váhy. Nakonec zjisti, kolik váží L.' },
+  { id: 'e5c', etapa: 'e5', obtiznost: 'základní', typ: 'res', opora: 'sam', x: 4,
+    leva: [{ p: 3, t: 'L', n: 1 }, { p: 2, t: 'd', n: 1 }],
+    prava: [{ p: 1, t: 'L', n: 1 }, { p: 1, t: 'h', n: 1 }, { p: 4, t: 'd', n: 1 }],
+    text: 'Zjisti, kolik váží L. Každý krok udělej na obou stranách a pusť váhy. Řádky se zapisují samy.' },
+  { id: 'e5d', etapa: 'e5', obtiznost: 'základní', typ: 'res', opora: 'sam', x: 3, pis: true, brana: true, vzor: 'obe',
+    leva: [{ p: 4, t: 'L', n: 1 }, { p: 1, t: 'd', n: 1 }],
+    prava: [{ p: 2, t: 'L', n: 1 }, { p: 1, t: 'h', n: 1 }, { p: 1, t: 'd', n: 1 }],
+    text: 'Zjisti, kolik váží L. Po každém kroku na vahách zapiš nový řádek do Zápisníku.' },
+
+  /* ---------- E6 Od vah k zápisu ---------- */
+  { id: 'e6a', etapa: 'e6', obtiznost: 'základní', typ: 'zapis', opora: 'spolu', x: 4, upravaPovinna: true,
+    rovnice: '5x + 2 = 2x + 14',
+    leva: [{ p: 5, t: 'L', n: 1 }, { p: 2, t: 'd', n: 1 }],
+    prava: [{ p: 2, t: 'L', n: 1 }, { p: 2, t: 'h', n: 1 }, { p: 2, t: 'd', n: 1 }],
+    text: 'Váhy jsou schované. Za čáru zapiš úpravu, pod ni nový řádek. Pokračuj, dokud nevíš, čemu se rovná x.' },
+  { id: 'e6b', etapa: 'e6', obtiznost: 'základní', typ: 'zapis', opora: 'sam', x: 5, upravaPovinna: true, brana: true, vzor: 'obe',
+    rovnice: '4x + 3 = x + 18',
+    leva: [{ p: 4, t: 'L', n: 1 }, { p: 3, t: 'd', n: 1 }],
+    prava: [{ p: 1, t: 'L', n: 1 }, { p: 5, t: 't', n: 1 }, { p: 3, t: 'd', n: 1 }],
+    text: 'Vyřeš rovnici zápisem. Nakonec udělej zkoušku dosazením.' },
+
+  /* ---------- E7 Záporné pozice ---------- */
+  { id: 'e7a', etapa: 'e7', obtiznost: 'střední', typ: 'pokus', opora: 'spolu', x: 1, zapor: true, zamceno: true,
+    leva: [{ p: -4, t: 'd', n: 1 }], prava: [],
+    text: 'Zadní čárkované rameno má záporné pozice a otáčí se opačně. Vlevo stojí disk na pozici −4, vpravo nic. Tipni a pusť váhy.',
+    poHotovo: 'Disk na pozici −4 má účinek −4. Co to udělalo s levou stranou?',
+    napovedy: ['Kterým směrem se otáčí zadní rameno, když ho vlevo něco zatíží?',
+               'Účinek je pozice · závaží. Kolik vyjde pro pozici −4 a disk?'] },
+  { id: 'e7b', etapa: 'e7', obtiznost: 'střední', typ: 'pokus', opora: 'spolu', x: 1, zapor: true, zamceno: true,
+    leva: [{ p: 3, t: 'd', n: 1 }, { p: -3, t: 'd', n: 1 }], prava: [],
+    text: 'Vlevo visí disk na pozici 3 a stojí disk na pozici −3. Vpravo není nic. Tipni a pusť váhy.',
+    napovedy: ['Jaký účinek má disk na pozici 3? A disk na pozici −3?',
+               'Kolik dají oba účinky dohromady?'] },
+  { id: 'e7c', etapa: 'e7', obtiznost: 'střední', typ: 'res', opora: 'spolu', x: 5, zapor: true,
+    leva: [{ p: 2, t: 'L', n: 1 }, { p: -4, t: 'd', n: 1 }], prava: [{ p: 2, t: 't', n: 1 }],
+    text: 'Zjisti, kolik váží L. Disk na pozici −4 levou stranu nadlehčuje. Uprav obě strany stejně a pusť váhy.' },
+  { id: 'e7d', etapa: 'e7', obtiznost: 'střední', typ: 'res', opora: 'sam', x: 4, zapor: true, brana: true, vzor: 'zapor',
+    leva: [{ p: 3, t: 'L', n: 1 }, { p: -2, t: 'd', n: 1 }],
+    prava: [{ p: 1, t: 'L', n: 1 }, { p: 1, t: 'h', n: 1 }],
+    text: 'Zjisti, kolik váží L. Každý krok udělej na obou stranách a pusť váhy.' },
+
+  /* ---------- E8 Závorka na háčku ---------- */
+  { id: 'e8a', etapa: 'e8', obtiznost: 'střední', typ: 'veta', opora: 'spolu', x: 4, zapor: true,
+    leva: [{ p: 3, t: 'L', n: 1 }, { p: 3, t: 'd', n: 2 }], prava: [{ p: 3, t: 'h', n: 1 }],
+    zasobnik: ['d', 't', 'h', 'L'],
+    text: 'Vše, co visí na jednom kolíku, je závorka. Vlevo visí na pozici 3 jedno L a dva disky.',
+    veta: 'Levou stranu popisuje zápis …',
+    moznosti: ['3 · x + 2', '3 · (x + 2)', '3 + x + 2'], spravne: 1,
+    poSpatne: 'Jaký účinek mají dva disky na pozici 3?',
+    napovedy: ['Kolik váží dohromady všechno, co visí na kolíku 3?',
+               'Čím se ta hmotnost násobí, aby vyšel účinek?'] },
+  { id: 'e8b', etapa: 'e8', obtiznost: 'střední', typ: 'res', opora: 'spolu', x: 4, zapor: true, surovy: true, rozepis: true,
+    leva: [{ p: 3, t: 'L', n: 1 }, { p: 3, t: 'd', n: 2 }], prava: [{ p: 3, t: 'h', n: 1 }],
+    text: 'Na jednom kolíku visí L a dva disky. Nejdřív zapiš rovnici bez závorky. Potom zjisti, kolik váží L.' },
+  { id: 'e8c', etapa: 'e8', obtiznost: 'střední', typ: 'res', opora: 'sam', x: 5, zapor: true, surovy: true, rozepis: true, brana: true, vzor: 'zavorka',
+    leva: [{ p: 4, t: 'L', n: 1 }, { p: -4, t: 'd', n: 3 }], prava: [{ p: 4, t: 'd', n: 2 }],
+    text: 'L visí na pozici 4, tři disky stojí na pozici −4. Zapiš rovnici bez závorky a zjisti, kolik váží L.' },
+
+  /* ---------- E9 Zvláštní váhy ---------- */
+  { id: 'e9a', etapa: 'e9', obtiznost: 'těžké', typ: 'zvlastni', opora: 'sam', x: 3,
+    leva: [{ p: 2, t: 'L', n: 1 }, { p: 2, t: 'd', n: 1 }], prava: [{ p: 2, t: 'L', n: 1 }, { p: 1, t: 't', n: 1 }],
+    text: 'Tyhle váhy jsou zvláštní. Měň hmotnost L, pouštěj váhy a zkus je i upravit.',
+    otazka: 'Pro kolik hmotností L stojí váhy rovně?',
+    moznosti: ['pro žádnou', 'právě pro jednu', 'pro každou'], spravne: 0,
+    poSpatne: 'Zkus za L jiné číslo a pusť váhy. Co udělaly?',
+    bezX: 'Na vahách už není žádné L. Mohou takhle někdy stát rovně?',
+    napovedy: ['Co udělají váhy, když L váží 1? A když váží 9?',
+               'Co zbyde na vahách, když z obou stran ubereš všechna L?',
+               'Záleží ještě na hmotnosti L, když na vahách žádné L není?'] },
+  { id: 'e9b', etapa: 'e9', obtiznost: 'těžké', typ: 'zvlastni', opora: 'sam', x: 3,
+    leva: [{ p: 1, t: 'L', n: 1 }, { p: 1, t: 't', n: 1 }], prava: [{ p: 1, t: 'L', n: 1 }, { p: 3, t: 'd', n: 1 }],
+    text: 'Ještě jedny zvláštní váhy. Měň hmotnost L, pouštěj váhy a zkus je i upravit.',
+    otazka: 'Pro kolik hmotností L stojí váhy rovně?',
+    moznosti: ['pro žádnou', 'právě pro jednu', 'pro každou'], spravne: 2,
+    poSpatne: 'Zkus za L jiné číslo a pusť váhy. Co udělaly?',
+    bezX: 'Na vahách už není žádné L a stojí rovně. Záleží ještě na tom, kolik L váží?',
+    napovedy: ['Co udělají váhy, když L váží 1? A když váží 9?',
+               'Co zbyde na vahách, když z obou stran ubereš všechna L?',
+               'Záleží ještě na hmotnosti L, když na vahách žádné L není?'] },
+
+  /* ---------- E10 Bez vah ---------- */
+  { id: 'e10a', etapa: 'e10', obtiznost: 'těžké', typ: 'zapis', opora: 'sam', rovnice: '2x + 9 = 1',
+    text: 'Váhy tohle neunesou, postup funguje dál. Vyřeš rovnici zápisem a udělej zkoušku.' },
+  { id: 'e10b', etapa: 'e10', obtiznost: 'těžké', typ: 'zapis', opora: 'sam', rovnice: '3x + 1 = x + 6',
+    text: 'Výsledek nemusí být celé číslo. Zlomek zapiš jako 5/2, desetinné číslo s čárkou.' },
+  { id: 'e10c', etapa: 'e10', obtiznost: 'těžké', typ: 'zapis', opora: 'sam', rovnice: '5 − x = 2x − 4',
+    text: 'Tady se x odčítá. Vyřeš rovnici zápisem a udělej zkoušku.' },
+  { id: 'e10d', etapa: 'e10', obtiznost: 'těžké', typ: 'zapis', opora: 'sam', rovnice: '2 · (x − 1) = x + 7', brana: true, vzor: 'bezvah',
+    text: 'Nejdřív se zbav závorky. Vyřeš rovnici zápisem a udělej zkoušku.' }
+];
+
+/* Krok předvedený „na jiných vahách s jinými čísly“ (4. stupeň nápovědy). */
+var UKAZKY = {
+  obe: [
+    { x: 3, leva: [{ p: 2, t: 'L' }, { p: 2, t: 'd' }], prava: [{ p: 1, t: 'L' }, { p: 5, t: 'd' }],
+      po: { leva: [{ p: 1, t: 'L' }, { p: 2, t: 'd' }], prava: [{ p: 5, t: 'd' }] },
+      text: 'Na jiných vahách ubylo z obou stran jedno L. Proč váhy zůstaly rovně?' },
+    { x: 2, leva: [{ p: 3, t: 'L' }, { p: 1, t: 'd' }], prava: [{ p: 2, t: 'L' }, { p: 3, t: 'd' }],
+      po: { leva: [{ p: 1, t: 'L' }, { p: 1, t: 'd' }], prava: [{ p: 3, t: 'd' }] },
+      text: 'Na jiných vahách ubyla z obou stran dvě L. Proč váhy zůstaly rovně?' }
+  ],
+  konst: [
+    { x: 3, leva: [{ p: 1, t: 'L' }, { p: 2, t: 'd' }], prava: [{ p: 5, t: 'd' }],
+      po: { leva: [{ p: 1, t: 'L' }], prava: [{ p: 3, t: 'd' }] },
+      text: 'Na jiných vahách ubyl z obou stran účinek 2. Proč váhy zůstaly rovně?' }
+  ],
+  konstZap: [
+    { x: 3, zapor: true, leva: [{ p: 1, t: 'L' }, { p: -2, t: 'd' }], prava: [{ p: 1, t: 'd' }],
+      po: { leva: [{ p: 1, t: 'L' }], prava: [{ p: 1, t: 'd' }, { p: 2, t: 'd' }] },
+      text: 'Na jiných vahách přibyl na obou stranách účinek 2. Proč váhy zůstaly rovně?' }
+  ],
+  nasob: [
+    { x: 2, leva: [{ p: 3, t: 'L' }], prava: [{ p: 2, t: 't' }],
+      po: { leva: [{ p: 1, t: 'L' }], prava: [{ p: 2, t: 'd' }] },
+      text: 'Na jiných vahách zbyla z každé strany třetina účinku. Proč váhy zůstaly rovně?' }
+  ]
+};
+
+/* Všechny texty. Zprávy průvodce mají nejvýš dvě věty a končí otázkou
+   nebo výzvou k pokusu na vahách. Průvodce nikdy neříká výsledek. */
+var T = {
+  uvod: 'Zjisti na vahách, proč smíš na obou stranách rovnice udělat totéž.',
+  tipy: ['klesne levá', 'zůstanou rovně', 'klesne pravá'],
+  vysledky: ['klesla levá strana', 'zůstaly rovně', 'klesla pravá strana'],
+  rezimy: { ukazka: 'Ukázka', spolu: 'Spolu', sam: 'Sám / sama' },
+  stavy: { sam: 'zvládnuto samostatně', otazky: 's otázkami', opora: 's oporou', ne: 'nedokončeno' },
+  nazvy: { d: 'disk', t: 'trojúhelník', h: 'šestiúhelník', L: 'L' },
+  Nazvy: { d: 'Disk', t: 'Trojúhelník', h: 'Šestiúhelník', L: 'L' },
+  vahy: {
+    drzene: 'Váhy jsou držené. Můžeš stavět.',
+    drzenePevne: 'Váhy jsou držené.',
+    rovne: 'Váhy jsou puštěné: stojí rovně.',
+    leva: 'Váhy jsou puštěné: klesla levá strana.',
+    prava: 'Váhy jsou puštěné: klesla pravá strana.',
+    plno: 'Na tenhle kolík se další závaží nevejde.',
+    nejdrivRadek: 'Nejdřív zapiš řádek do Zápisníku.',
+    nelze: 'Tady se teď nestaví.'
+  },
+  pozn: {
+    nerozumim: 'Tomuhle zápisu aplikace nerozumí. Piš třeba takhle: 2x + 3 = 11',
+    uprava: 'Za čáru zapiš úpravu, třeba −2x nebo : 3.',
+    upravaChyba: 'Úpravě za čarou aplikace nerozumí. Piš třeba −2x, +4 nebo : 3.',
+    bezZavorky: 'Napiš rovnici bez závorky.',
+    cislo: 'Zapiš číslo.',
+    ucinky: 'Nejdřív zapiš oba účinky.',
+    nevejde: 'Tenhle řádek se na váhy nevejde.',
+    text: 'Napiš aspoň pár slov.'
+  },
+  exp: {
+    popisek: 'MATEMATIKA · 9. ROČNÍK · ROVNICE',
+    nadpis: 'Rovnice na vahách – záznam práce',
+    podnadpis: 'Záznam složila aplikace z toho, co se dělo na vahách a v Zápisníku.',
+    uvod: 'Aplikace vytvoří PDF pro učitele. Bude v něm, kam ses dostal(a), co ti šlo a kde to drhlo. Soubor potom nahraj do MS Teams.',
+    jmeno: 'Jak se jmenuješ?',
+    skala: 'Jak ti to šlo?',
+    skalaPopis: '1 je nejhůře, 10 je nejlépe.',
+    soukromi: 'Jméno se nikam neukládá. Bude jen v PDF.',
+    chybiJmeno: 'Napiš své jméno.',
+    chybiZnamka: 'Klikni na číslo od 1 do 10.',
+    hotovo: 'PDF je stažené. Najdeš ho ve stažených souborech pod názvem',
+    nahraj: 'Nahraj ho do MS Teams.',
+    nejde: 'PDF se nepodařilo vytvořit. Zkus to znovu, nebo jiný prohlížeč.',
+    stavy: { sam: 'samostatně', otazky: 's otázkami', opora: 's oporou', rozprac: 'rozpracováno', nezac: 'nezačato' },
+    sloupce: ['', 'Etapa', 'Výsledek', 'Čas', 'Otázky průvodce', 'Dvojčata', 'Chyby'],
+    chyby: {
+      jedna: 'úprava jen na jedné straně',
+      jinde: 'stejné závaží na jiné pozici bráno jako stejný účinek',
+      ruzne: 'jiná změna vlevo než vpravo',
+      nahoda: 'váhy zůstaly rovně, ale změny si neodpovídaly',
+      soucet: 'účinek počítaný sčítáním místo násobením',
+      ucinky: 'špatně spočítaný účinek',
+      dvax: '2x chápané jako 2 + x',
+      slouceni: 'sloučení čísla s neznámou (x + 2 jako 2x)',
+      znamenko: 'znaménko při roznásobení závorky',
+      vysledek: 'špatný výsledek ve zkoušce na vahách',
+      radek: 'zapsaný řádek nebyl ekvivalentní s předchozím',
+      dosazeni: 'chyba při dosazení ve zkoušce',
+      veta: 'špatně doplněná věta nebo volba',
+      ukazka: 'špatně určeno, co z obou stran ubylo'
+    },
+    otazkaZaver: 'Proč smím na obou stranách rovnice udělat totéž?',
+    otazkaE9: 'Zvláštní váhy (etapa 9): co jsem zjistil(a)',
+    nevyplneno: 'nevyplněno',
+    legenda: 'Čas je jen aktivní práce s aplikací. Otázky průvodce mají čtyři stupně: 1 kam mířím ; 2 kam se dívat ; 3 zúžení volby ; 4 krok předvedený na jiných vahách. Dvojče je podobná úloha s větší oporou. Chyby aplikace poznává z akcí na vahách a ze zapsaných řádků.'
+  },
+  pr: {
+    nabidka: 'Chceš otázku, která ti pomůže?',
+    nejdrivTip: 'Co myslíš, že váhy udělají? Nejdřív tipni a pak je pusť.',
+    jednaStrana: 'Co se stalo s vahami? Co musíš udělat na druhé straně, aby se vrátily?',
+    stejneJinde: '{T} je stejný, ale visí jinde. Jaký má účinek vlevo a jaký vpravo?',
+    ruzne: 'Počitadlo ukazuje vlevo jinou změnu než vpravo. Jak je na vahách srovnáš?',
+    nahoda: 'Váhy zůstaly rovně, ale vlevo je jiná změna než vpravo. Jak víš, že to vyjde i s jiným L?',
+    soucet: 'Kolik disků na pozici 1 vyváží jeden disk na pozici 4? Vyzkoušej.',
+    ucinkyJinak: 'Váhy počítají účinek jako pozice · závaží. Ve kterém závaží se tvůj výpočet liší?',
+    dvaXplus: 'Vyváží L na pozici {a} jedno L a {disky} na pozici 1? Pusť váhy.',
+    slouceni: 'Můžeš disk vyměnit za L? Váží stejně?',
+    znamenko: 'Závaží na záporné pozici stranu nadlehčuje. Jaký účinek má na pozici −{p}: kladný, nebo záporný?',
+    znamenkoZapis: 'Zkus roznásobit každý člen závorky zvlášť. Jaké znaménko vyjde u čísla?',
+    jenJedna: 'Jedna strana tvého řádku se změnila, druhá ne. Co se s ní má stát?',
+    spatnyVysledek: 'Tohle jsou původní váhy s tvým číslem. Kolik vyjde vlevo a kolik vpravo?',
+    radekVahy: 'Tohle jsou váhy podle tvého řádku. Pusť je.',
+    radekPorovnej: 'Porovnej svůj řádek s předchozím. Co se změnilo vlevo a co vpravo?',
+    poUkazce: 'Jaký podobný krok uděláš na svých vahách? Zkus ho a pusť je.',
+    poUkazceZapis: 'Jakou podobnou úpravu zapíšeš za čáru u své rovnice?',
+    zkusVolbu: 'Zkus to na vahách a pusť je.',
+    zkusVolbuZapis: 'Jak bude po téhle úpravě vypadat levá strana? A pravá?',
+    zkusOdpoved: 'Zapiš, kolik váží L, a udělej zkoušku na vahách.',
+    prvniKrok: 'První krok je hotový: z obou stran ubylo totéž. Co uděláš teď?',
+    ukazkaOtazka: 'Co z obou stran ubylo?',
+    ukazka1: 'Sleduj čárkované obrysy. Co ubylo vlevo a co vpravo?',
+    ukazka2: 'Počitadlo pod vahami ukazuje změnu obou stran. Co tedy ubylo?',
+    samo: 'L zůstalo na své straně samo. Kolik váží?',
+    dosazeni: 'Dosazuj do původní rovnice krok za krokem. Kolik vyjde samotný člen s x?',
+    rozepis: 'Jaký účinek má L na tomhle kolíku? A jaký účinek mají disky?',
+    pis: 'Co teď visí vlevo a co vpravo? Jak to zapíšeš?',
+    zavorkaVolne: 'Postav to na volných vahách a pusť je. Co udělaly?'
+  },
+  nap: {
+    res: {
+      1: 'Co chceš na vahách vidět, abys poznal(a), kolik váží L?',
+      2: { obe: 'Na které straně má L větší účinek? O kolik?',
+           konst: 'Co visí na stejné straně jako L? Jaký to má účinek?',
+           konstZap: 'Které závaží stranu s L nadlehčuje? Jakým účinkem?',
+           nasob: 'L visí na pozici {a}. Jaký účinek má celá druhá strana?',
+           hotovo: 'L visí samo na pozici 1. Jaký účinek má druhá strana?',
+           bezx: 'Na vahách není žádné L. Co ti váhy říkají teď?' },
+      3: { obe: 'Co můžeš ubrat z obou stran, aby L zůstalo jen na jedné?',
+           konst: 'Co můžeš ubrat z obou stran, aby L na své straně zůstalo samo?',
+           konstZap: 'Co můžeš přidat na obě strany, aby záporný účinek zmizel?',
+           nasob: 'Na kolik stejných dílů rozdělíš účinek druhé strany, aby jeden díl patřil jednomu L?',
+           hotovo: 'Kolik tedy váží L? Zapiš číslo a udělej zkoušku na vahách.',
+           bezx: 'Vrať krok zpět a zkus jinou úpravu. Co má na vahách zůstat?' }
+    },
+    zapis: {
+      1: 'Jak má vypadat poslední řádek, abys z něj přečetl(a) x?',
+      2: { obe: 'Na které straně je víc x? O kolik?',
+           konst: 'Které číslo stojí na stejné straně jako x?',
+           konstZap: 'Které číslo se na straně s x odčítá?',
+           nasob: 'Kolikrát je x na své straně? Čemu se to rovná?',
+           hotovo: 'Čemu se rovná x? Co ti ještě zbývá udělat?',
+           bezx: 'V řádku není žádné x. Může taková rovnost platit?' },
+      3: { obe: 'Kterou úpravou zmizí x z jedné strany?',
+           konst: 'Kterou úpravou zůstane x na své straně samo?',
+           konstZap: 'Kterou úpravou zmizí číslo, které se odčítá?',
+           nasob: 'Kterou úpravou dostaneš jedno x?',
+           hotovo: 'Co vyjde vlevo a co vpravo, když své x dosadíš do první rovnice?',
+           bezx: 'Kde se x ztratilo? Co vyjde, když předchozí úpravu uděláš znovu?' }
+    },
+    faze: {
+      rozepis: ['Co všechno je na kolíku se závorkou? Jaký účinek má každé závaží zvlášť?',
+                'Jaký účinek má L na tomhle kolíku? A jaký účinek mají disky?',
+                'Jaké znaménko má účinek závaží na záporné pozici?'],
+      pis: ['Co teď visí vlevo a co vpravo?',
+            'Jaký účinek má L vlevo? Jaký účinek mají ostatní závaží vlevo?',
+            'Jak zapíšeš účinek levé strany? A pravé?'],
+      dosazeni: ['Do které rovnice dosazuješ? Co v ní nahradíš svým číslem?',
+                 'Kolik vyjde samotný člen s x na levé straně?',
+                 'Co k členu s x ještě přičteš, nebo od něj odečteš?'],
+      ukazka: ['Co viselo vlevo před krokem a co tam visí teď?',
+               'Sleduj čárkované obrysy. Co ubylo vlevo a co vpravo?']
+    },
+    obecne: ['Co má být na konci na vahách vidět?', 'Co ukazuje počitadlo změn pod vahami?']
+  }
+};
+
+/* =====================================================================
+   MODEL: čisté funkce, žádný přístup k dokumentu
+   Strana vah = pole závaží { p: pozice, t: typ }. Váhy = { L: [], R: [] }.
+   ===================================================================== */
+var M = {};
+
+M.rozbal = function (def) {
+  var s = [];
+  (def || []).forEach(function (z) { for (var i = 0; i < (z.n || 1); i++) s.push({ p: z.p, t: z.t }); });
+  return s;
+};
+M.kopie = function (v) { return { L: M.rozbal(v.L), R: M.rozbal(v.R) }; };
+
+/* Strana jako a · x + b (celá čísla). */
+M.koef = function (strana) {
+  var a = 0, b = 0;
+  strana.forEach(function (z) { if (z.t === 'L') a += z.p; else b += z.p * KONF.hmotnosti[z.t]; });
+  return { a: a, b: b };
+};
+M.ucinek = function (strana, x) { var k = M.koef(strana); return k.a * x + k.b; };
+/* −1 klesne levá ; 0 rovnováha ; 1 klesne pravá. Přesně, bez tolerance. */
+M.naklon = function (vahy, x) {
+  var l = M.ucinek(vahy.L, x), r = M.ucinek(vahy.R, x);
+  return r > l ? 1 : (r < l ? -1 : 0);
+};
+M.naKoliku = function (strana, p) { return strana.filter(function (z) { return z.p === p; }).length; };
+M.podpis = function (strana) {
+  return strana.map(function (z) { return z.p + z.t; }).sort().join(' ');
+};
+M.stejne = function (s1, s2) { return M.podpis(s1) === M.podpis(s2); };
+M.rovVah = function (vahy) { return { l: M.koef(vahy.L), r: M.koef(vahy.R) }; };
+
+/* Nejmenší počet známých závaží s daným účinkem. */
+M.MINCE = (function () {
+  var m = [];
+  ['d', 't', 'h'].forEach(function (t) {
+    for (var p = KONF.maxPozice; p >= 1; p--) m.push({ p: p, t: t, v: p * KONF.hmotnosti[t] });
+  });
+  return m;
+})();
+M.rozmen = function (v) {
+  if (v < 0 || v > 150 || v !== Math.floor(v)) return null;
+  var best = [0], vol = [null], i, j;
+  for (i = 1; i <= v; i++) {
+    best[i] = Infinity;
+    for (j = 0; j < M.MINCE.length; j++) {
+      var m = M.MINCE[j];
+      if (m.v <= i && best[i - m.v] + 1 < best[i]) { best[i] = best[i - m.v] + 1; vol[i] = m; }
+    }
+  }
+  if (!isFinite(best[v])) return null;
+  var out = [], r = v;
+  while (r > 0) { out.push({ p: vol[r].p, t: vol[r].t }); r -= vol[r].v; }
+  return out;
+};
+
+/* Přehledné rozmístění pro a · x + b. Vrací stranu, nebo null. */
+M.rozmisti = function (a, b, zapor) {
+  if (a !== Math.floor(a) || b !== Math.floor(b)) return null;
+  if ((a < 0 || b < 0) && !zapor) return null;
+  var s = [], cnt = {}, ok = true;
+  function dej(p, t) {
+    cnt[p] = (cnt[p] || 0) + 1;
+    if (cnt[p] > KONF.maxNaKoliku) ok = false;
+    s.push({ p: p, t: t });
+  }
+  var sa = a < 0 ? -1 : 1, ra = Math.abs(a);
+  while (ra > 0) { var p = Math.min(KONF.maxPozice, ra); dej(sa * p, 'L'); ra -= p; }
+  var sb = b < 0 ? -1 : 1, kusy = M.rozmen(Math.abs(b));
+  if (!kusy) return null;
+  kusy.forEach(function (k) { dej(sb * k.p, k.t); });
+  return ok ? s : null;
+};
+
+/* Úprava strany o da · x + db s co nejmenší změnou závaží. */
+M.aplikuj = function (strana, da, db, zapor) {
+  var s = M.rozbal(strana), max = KONF.maxNaKoliku, i, k;
+  function nouze() { var c = M.koef(strana); return M.rozmisti(c.a + da, c.b + db, zapor); }
+  function najdi(test, lepsi) {
+    var b = -1;
+    s.forEach(function (z, j) { if (test(z) && (b < 0 || lepsi(z, s[b]))) b = j; });
+    return b;
+  }
+  /* neznámá */
+  if (da < 0) {
+    k = -da;
+    while (k > 0) {
+      i = najdi(function (z) { return z.t === 'L' && z.p > 0; }, function (z, y) { return z.p > y.p; });
+      if (i < 0) return nouze();
+      if (s[i].p <= k) { k -= s[i].p; s.splice(i, 1); }
+      else if (M.naKoliku(s, s[i].p - k) < max) { s[i].p -= k; k = 0; }
+      else return nouze();
+    }
+  } else if (da > 0) {
+    k = da;
+    while (k > 0) {
+      i = najdi(function (z) { return z.t === 'L' && z.p < 0 && -z.p <= k; }, function (z, y) { return z.p < y.p; });
+      if (i >= 0) { k += s[i].p; s.splice(i, 1); continue; }
+      var p = Math.min(KONF.maxPozice, k);
+      if (M.naKoliku(s, p) >= max) return nouze();
+      s.push({ p: p, t: 'L' }); k -= p;
+    }
+  }
+  /* známá závaží */
+  function ef(z) { return z.p * KONF.hmotnosti[z.t]; }
+  if (db !== 0) {
+    var zn = db < 0 ? 1 : -1;      /* ubírám z kladných, nebo ze záporných kolíků */
+    var c = Math.abs(db), bezpecne = 40;
+    while (c > 0 && bezpecne-- > 0) {
+      i = najdi(function (z) { return z.t !== 'L' && zn * ef(z) === c; }, function () { return false; });
+      if (i >= 0) { s.splice(i, 1); c = 0; break; }
+      i = najdi(function (z) { return z.t === 'd' && zn * z.p > c && M.naKoliku(s, z.p - zn * c) < max; },
+                function (z, y) { return zn * z.p < zn * y.p; });
+      if (i >= 0) { s[i].p -= zn * c; c = 0; break; }
+      i = najdi(function (z) { return z.t !== 'L' && zn * ef(z) > 0 && zn * ef(z) < c; },
+                function (z, y) { return zn * ef(z) > zn * ef(y); });
+      if (i >= 0) { c -= zn * ef(s[i]); s.splice(i, 1); continue; }
+      break;
+    }
+    if (c > 0) {                   /* zbytek přidám na opačné rameno */
+      if (zn === 1 && !zapor) return nouze();
+      var kusy = M.rozmen(c);
+      if (!kusy) return nouze();
+      for (i = 0; i < kusy.length; i++) {
+        var pp = -zn * kusy[i].p;
+        if (M.naKoliku(s, pp) >= max) return nouze();
+        s.push({ p: pp, t: kusy[i].t });
+      }
+    }
+  }
+  var bylo = M.koef(strana), je = M.koef(s);
+  return (je.a === bylo.a + da && je.b === bylo.b + db) ? s : nouze();
+};
+
+/* Jaký krok vede od rovnice z k rovnici n (celočíselné koeficienty). */
+M.krok = function (z, n) {
+  var dl = { a: n.l.a - z.l.a, b: n.l.b - z.l.b }, dr = { a: n.r.a - z.r.a, b: n.r.b - z.r.b };
+  function nul(d) { return d.a === 0 && d.b === 0; }
+  if (nul(dl) && nul(dr)) return { typ: 'nic' };
+  if (dl.a === dr.a && dl.b === dr.b) return { typ: 'plus', d: dl };
+  var nenul = function (r) { return r.l.a || r.l.b || r.r.a || r.r.b; };
+  if (nenul(z) && nenul(n)) {
+    for (var k = 2; k <= 12; k++) {
+      if (n.l.a * k === z.l.a && n.l.b * k === z.l.b && n.r.a * k === z.r.a && n.r.b * k === z.r.b) return { typ: 'del', k: k };
+      if (z.l.a * k === n.l.a && z.l.b * k === n.l.b && z.r.a * k === n.r.a && z.r.b * k === n.r.b) return { typ: 'nas', k: k };
+    }
+  }
+  return { typ: 'ruzne', dl: dl, dr: dr };
+};
+
+/* V jaké situaci rovnice je a jaký krok se nabízí (čísla, ne zlomky). */
+M.situace = function (r) {
+  if (r.l.a !== 0 && r.r.a !== 0) {
+    var mensi = r.l.a <= r.r.a ? r.l : r.r;
+    return { typ: 'obe', k: mensi.a, c: mensi.b, vetsi: Math.max(r.l.a, r.r.a) };
+  }
+  var s = r.l.a !== 0 ? r.l : (r.r.a !== 0 ? r.r : null);
+  if (!s) return { typ: 'bezx' };
+  var o = s === r.l ? r.r : r.l;
+  if (s.b !== 0) return { typ: s.b < 0 ? 'konstZap' : 'konst', c: s.b, a: s.a, o: o.b };
+  if (s.a !== 1) return { typ: 'nasob', a: s.a, c: o.b };
+  return { typ: 'hotovo', c: o.b };
+};
+M.izolovano = function (r) {
+  return (r.l.a !== 0 && r.l.b === 0 && r.r.a === 0) || (r.r.a !== 0 && r.r.b === 0 && r.l.a === 0);
+};
+
+/* ---------- zlomky ---------- */
+function nsd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { var t = a % b; a = b; b = t; } return a || 1; }
+function Q(n, d) {
+  if (d === undefined) d = 1;
+  if (d < 0) { n = -n; d = -d; }
+  var g = nsd(n, d);
+  return { n: n / g, d: d / g };
+}
+Q.plus = function (p, q) { return Q(p.n * q.d + q.n * p.d, p.d * q.d); };
+Q.minus = function (p, q) { return Q(p.n * q.d - q.n * p.d, p.d * q.d); };
+Q.krat = function (p, q) { return Q(p.n * q.n, p.d * q.d); };
+Q.deleno = function (p, q) { return Q(p.n * q.d, p.d * q.n); };
+Q.rovno = function (p, q) { return p.n === q.n && p.d === q.d; };
+Q.nula = function (p) { return p.n === 0; };
+Q.abs = function (p) { return Q(Math.abs(p.n), p.d); };
+Q.neg = function (p) { return Q(-p.n, p.d); };
+Q.cislo = function (p) { return p.n / p.d; };
+M.Q = Q;
+M.vyrazQ = function (e) { return { a: Q(e.a), b: Q(e.b) }; };
+M.rovQ = function (r) { return { l: M.vyrazQ(r.l), r: M.vyrazQ(r.r) }; };
+M.rovCisla = function (r) {
+  return { l: { a: Q.cislo(r.l.a), b: Q.cislo(r.l.b) }, r: { a: Q.cislo(r.r.a), b: Q.cislo(r.r.b) } };
+};
+M.jeCela = function (r) { return r.l.a.d === 1 && r.l.b.d === 1 && r.r.a.d === 1 && r.r.b.d === 1; };
+
+/* ---------- formát ---------- */
+M.fmtQ = function (q) {
+  var z = q.n < 0 ? '−' : '', n = Math.abs(q.n);
+  if (q.d === 1) return z + n;
+  var d = q.d, jen = d;
+  while (jen % 2 === 0) jen /= 2;
+  while (jen % 5 === 0) jen /= 5;
+  if (jen === 1 && d <= 100) return z + String(n / d).replace('.', ',');
+  return z + n + '/' + d;
+};
+M.fmtCislo = function (c) {
+  if (typeof c === 'number') c = Q(Math.round(c * 1000), 1000);
+  return M.fmtQ(c);
+};
+function clenX(q) { var m = Q.abs(q); return (Q.rovno(m, Q(1)) ? '' : M.fmtQ(m)) + 'x'; }
+M.fmtVyraz = function (e) {
+  var a = e.a, b = e.b;
+  if (Q.nula(a)) return M.fmtQ(b);
+  if (Q.nula(b)) return (a.n < 0 ? '−' : '') + clenX(a);
+  if (a.n < 0 && b.n > 0) return M.fmtQ(b) + ' − ' + clenX(a);
+  return (a.n < 0 ? '−' : '') + clenX(a) + (b.n < 0 ? ' − ' : ' + ') + M.fmtQ(Q.abs(b));
+};
+M.fmtRov = function (r) { return M.fmtVyraz(r.l) + ' = ' + M.fmtVyraz(r.r); };
+/* Změna jako úprava: −x ; +3 ; −x − 1 */
+M.fmtZmena = function (d) {
+  var a = d.a, b = d.b, s = '';
+  if (!Q.nula(a)) s = (a.n < 0 ? '−' : '+') + clenX(a);
+  if (!Q.nula(b)) s += (s ? (b.n < 0 ? ' − ' : ' + ') : (b.n < 0 ? '−' : '+')) + M.fmtQ(Q.abs(b));
+  return s;
+};
+M.fmtKrok = function (k) {
+  if (k.typ === 'plus') return M.fmtZmena(M.vyrazQ(k.d));
+  if (k.typ === 'del') return ': ' + k.k;
+  if (k.typ === 'nas') return '· ' + k.k;
+  return '';
+};
+/* Strana po kolících: 2 · x + 3 · 1 ; 3 · (x + 2) ; 4 · (x − 3) */
+M.fmtSurovy = function (strana) {
+  var poradi = [], sk = {};
+  strana.forEach(function (z) {
+    var P = Math.abs(z.p), zn = z.p < 0 ? -1 : 1;
+    if (!sk[P]) { sk[P] = { k: 0, c: 0 }; poradi.push(P); }
+    if (z.t === 'L') sk[P].k += zn; else sk[P].c += zn * KONF.hmotnosti[z.t];
+  });
+  var out = '';
+  poradi.forEach(function (P) {
+    var g = sk[P], zap = false, telo;
+    if (g.k === 0 && g.c === 0) return;
+    if (g.k !== 0 && g.c !== 0) {
+      if (g.k < 0) { zap = true; g = { k: -g.k, c: -g.c }; }
+      telo = '(' + M.fmtVyraz(M.vyrazQ({ a: g.k, b: g.c })) + ')';
+    } else if (g.k !== 0) { zap = g.k < 0; telo = (Math.abs(g.k) === 1 ? '' : Math.abs(g.k)) + 'x'; }
+    else { zap = g.c < 0; telo = String(Math.abs(g.c)); }
+    out += (out ? (zap ? ' − ' : ' + ') : (zap ? '−' : '')) + P + ' · ' + telo;
+  });
+  return out || '0';
+};
+M.hezky = function (text) {
+  return String(text).replace(/\s+/g, ' ').trim().replace(/[-–]/g, '−').replace(/[*]/g, '·').replace(/\//g, '/')
+    .replace(/\s*([+−=·:])\s*/g, ' $1 ').replace(/^ − /, '−').replace(/^ \+ /, '+').replace(/([=(·:+−]) − /g, '$1 −')
+    .replace(/\(\s+/g, '(').replace(/\s+\)/g, ')').replace(/\s+/g, ' ').trim();
+};
+
+/* ---------- parser lineárních výrazů v x ---------- */
+M.cti = function (text) {
+  var s = String(text).replace(/\s+/g, '').replace(/[–-]/g, '−').replace(/[*.]/g, '·').replace(/\//g, ':').toLowerCase();
+  var tok = s.match(/\d+(?:,\d+)?|x|[+−·:()]/g) || [];
+  if (tok.join('').length !== s.length || !tok.length) throw new Error('znak');
+  var i = 0;
+  function K(n) { return { a: Q(0), b: n }; }
+  function vyraz() {
+    var v = clen();
+    while (tok[i] === '+' || tok[i] === '−') {
+      var op = tok[i++], w = clen();
+      v = op === '+' ? { a: Q.plus(v.a, w.a), b: Q.plus(v.b, w.b) } : { a: Q.minus(v.a, w.a), b: Q.minus(v.b, w.b) };
+    }
+    return v;
+  }
+  function krat(v, w) {
+    if (Q.nula(v.a)) return { a: Q.krat(w.a, v.b), b: Q.krat(w.b, v.b) };
+    if (Q.nula(w.a)) return { a: Q.krat(v.a, w.b), b: Q.krat(v.b, w.b) };
+    throw new Error('nelinearni');
+  }
+  function clen() {
+    var v = cinitel();
+    for (;;) {
+      if (tok[i] === '·') { i++; v = krat(v, cinitel()); }
+      else if (tok[i] === ':') {
+        i++; var w = cinitel();
+        if (!Q.nula(w.a) || Q.nula(w.b)) throw new Error('deleni');
+        v = { a: Q.deleno(v.a, w.b), b: Q.deleno(v.b, w.b) };
+      }
+      else if (tok[i] === 'x' || tok[i] === '(') v = krat(v, cinitel());
+      else break;
+    }
+    return v;
+  }
+  function cinitel() {
+    var t = tok[i];
+    if (t === '−') { i++; var v = cinitel(); return { a: Q.neg(v.a), b: Q.neg(v.b) }; }
+    if (t === '+') { i++; return cinitel(); }
+    if (t === 'x') { i++; return { a: Q(1), b: Q(0) }; }
+    if (t === '(') {
+      i++; var w = vyraz();
+      if (tok[i] !== ')') throw new Error('zavorka');
+      i++; return w;
+    }
+    if (t && /^\d/.test(t)) {
+      i++;
+      var cast = t.split(',');
+      return K(cast.length === 2 ? Q(parseInt(cast[0] + cast[1], 10), Math.pow(10, cast[1].length)) : Q(parseInt(t, 10)));
+    }
+    throw new Error('cinitel');
+  }
+  var out = vyraz();
+  if (i !== tok.length) throw new Error('zbytek');
+  return out;
+};
+M.ctiRovnici = function (text) {
+  var casti = String(text).split('=');
+  if (casti.length !== 2) return null;
+  try { return { l: M.cti(casti[0]), r: M.cti(casti[1]) }; } catch (e) { return null; }
+};
+M.ctiCislo = function (text) {
+  try { var v = M.cti(text); return Q.nula(v.a) ? v.b : null; } catch (e) { return null; }
+};
+/* Úprava za čarou: −2x ; +4 ; : 3 ; · 2 */
+M.ctiUpravu = function (text) {
+  var s = String(text).replace(/\s+/g, '').replace(/[–-]/g, '−').replace(/[*.]/g, '·').replace(/\//g, ':');
+  if (!s) return null;
+  try {
+    var z = s.charAt(0);
+    if (z === '+' || z === '−') return { typ: 'plus', d: M.cti(s) };
+    if (z === ':' || z === '·') {
+      var k = M.cti(s.slice(1));
+      if (!Q.nula(k.a) || Q.nula(k.b)) return null;
+      return { typ: z === ':' ? 'del' : 'nas', k: k.b };
+    }
+  } catch (e) { return null; }
+  return null;
+};
+M.pouzij = function (u, r) {
+  function na(e) {
+    if (u.typ === 'plus') return { a: Q.plus(e.a, u.d.a), b: Q.plus(e.b, u.d.b) };
+    if (u.typ === 'del') return { a: Q.deleno(e.a, u.k), b: Q.deleno(e.b, u.k) };
+    return { a: Q.krat(e.a, u.k), b: Q.krat(e.b, u.k) };
+  }
+  return { l: na(r.l), r: na(r.r) };
+};
+/* Rovnice jako A · x = B. Ekvivalence se ověřuje na koeficientech. */
+M.norm = function (r) { return { A: Q.minus(r.l.a, r.r.a), B: Q.minus(r.r.b, r.l.b) }; };
+M.ekviv = function (r1, r2) {
+  var p = M.norm(r1), q = M.norm(r2), pz = Q.nula(p.A), qz = Q.nula(q.A);
+  if (pz || qz) return pz && qz && (Q.nula(p.B) === Q.nula(q.B));
+  return Q.rovno(Q.krat(p.A, q.B), Q.krat(q.A, p.B));
+};
+M.reseni = function (r) { var n = M.norm(r); return Q.nula(n.A) ? null : Q.deleno(n.B, n.A); };
+M.vyreseno = function (r) {
+  var j = Q(1);
+  return (Q.rovno(r.l.a, j) && Q.nula(r.l.b) && Q.nula(r.r.a)) || (Q.rovno(r.r.a, j) && Q.nula(r.r.b) && Q.nula(r.l.a));
+};
+M.hodnota = function (e, x) { return Q.plus(Q.krat(e.a, x), e.b); };
+M.stejnyVyraz = function (e, f) { return Q.rovno(e.a, f.a) && Q.rovno(e.b, f.b); };
+/* Vzorové řešení po řádcích (pro učitele a pro testy). */
+M.kroky = function (r) {
+  var out = [], bezp = 8;
+  while (bezp-- > 0) {
+    var u = null;
+    var obe = !Q.nula(r.l.a) && !Q.nula(r.r.a);
+    if (obe) {
+      var m = Q.cislo(r.l.a) <= Q.cislo(r.r.a) ? r.l.a : r.r.a;
+      u = { typ: 'plus', d: { a: Q.neg(m), b: Q(0) } };
+    } else {
+      var s = !Q.nula(r.l.a) ? r.l : (!Q.nula(r.r.a) ? r.r : null);
+      if (!s) { out.push({ rov: r }); return out; }
+      if (!Q.nula(s.b)) u = { typ: 'plus', d: { a: Q(0), b: Q.neg(s.b) } };
+      else if (!Q.rovno(s.a, Q(1))) u = { typ: 'del', k: s.a };
+    }
+    if (!u) { out.push({ rov: r }); return out; }
+    out.push({ rov: r, upr: u.typ === 'plus' ? M.fmtZmena(u.d) : ': ' + M.fmtQ(u.k) });
+    r = M.pouzij(u, r);
+  }
+  out.push({ rov: r });
+  return out;
+};
+
+/* ---------- generátor dvojčat ---------- */
+M.nah = function (od, po, rnd) { return od + Math.floor((rnd || Math.random)() * (po - od + 1)); };
+M.generuj = function (vzor, vyhni, rnd) {
+  rnd = rnd || Math.random;
+  var n = function (a, b) { return M.nah(a, b, rnd); };
+  for (var pokus = 0; pokus < 400; pokus++) {
+    var x, a1, a2, b1, b2, L, R, c, p, sig, out = null;
+    if (vzor === 'jedna') {
+      x = n(1, 9); a1 = n(1, 4); b1 = n(1, 6);
+      L = M.rozmisti(a1, b1, false); R = M.rozmisti(0, a1 * x + b1, false);
+      sig = [a1, b1, 0, a1 * x + b1].join();
+      if (L && R) out = { leva: L, prava: R, x: x };
+    } else if (vzor === 'obe') {
+      x = n(1, 9); a1 = n(2, 5); a2 = n(1, a1 - 1); b1 = n(1, 6); b2 = (a1 - a2) * x + b1;
+      if (b2 > 36) continue;
+      L = M.rozmisti(a1, b1, false); R = M.rozmisti(a2, b2, false);
+      sig = [a1, b1, a2, b2].join();
+      if (L && R) out = rnd() < 0.5 ? { leva: L, prava: R, x: x } : { leva: R, prava: L, x: x };
+    } else if (vzor === 'zapor') {
+      x = n(2, 9); a1 = n(2, 4); a2 = n(0, 1); b1 = n(1, 5); b2 = (a1 - a2) * x - b1;
+      if (b2 < 1 || b2 > 30) continue;
+      L = M.rozmisti(a1, -b1, true); R = M.rozmisti(a2, b2, true);
+      sig = [a1, -b1, a2, b2].join();
+      if (L && R) out = { leva: L, prava: R, x: x, zapor: true };
+    } else if (vzor === 'zavorka') {
+      p = n(2, 4); c = n(1, 3); var zn = rnd() < 0.5 ? 1 : -1; x = n(1, 9);
+      var uvnitr = x + zn * c;
+      if (uvnitr < 1) continue;
+      L = [{ p: p, t: 'L' }];
+      for (var i = 0; i < c; i++) L.push({ p: zn * p, t: 'd' });
+      if (uvnitr <= KONF.maxNaKoliku) { R = []; for (i = 0; i < uvnitr; i++) R.push({ p: p, t: 'd' }); }
+      else R = M.rozmisti(0, p * uvnitr, true);
+      sig = [p, zn * p * c, 0, p * uvnitr].join();
+      if (R) out = { leva: L, prava: R, x: x, zapor: true };
+    } else if (vzor === 'bezvah') {
+      var A = n(2, 4), B = n(-12, 9);
+      if (B === 0 || (B > 0 && B % A === 0)) continue;
+      a2 = n(0, 3); a1 = a2 + A; b1 = n(1, 9); b2 = b1 + B;
+      var rov = { l: M.vyrazQ({ a: a1, b: b1 }), r: M.vyrazQ({ a: a2, b: b2 }) };
+      sig = [a1, b1, a2, b2].join();
+      out = { rovnice: M.fmtRov(rov) };
+    } else if (vzor === 'ucinky') {
+      var tv = ['d', 't', 'h'];
+      L = []; R = [];
+      var kl = n(1, 2), kr = n(1, 2);
+      for (i = 0; i < kl; i++) L.push({ p: n(1, 5), t: tv[n(0, 2)] });
+      for (i = 0; i < kr; i++) R.push({ p: n(1, 5), t: tv[n(0, 2)] });
+      var roz = M.ucinek(L, 1) - M.ucinek(R, 1);
+      if (Math.abs(roz) > 3 || M.ucinek(L, 1) > 24) continue;
+      sig = M.podpis(L) + '|' + M.podpis(R);
+      out = { leva: L, prava: R, x: 1 };
+    }
+    if (out && sig !== vyhni) { out.sig = sig; return out; }
+  }
+  return null;
+};
+M.sigUlohy = function (def) {
+  if (def.sig) return def.sig;
+  if (def.rovnice && !def.leva) {
+    var r = M.ctiRovnici(def.rovnice);
+    return r ? [r.l.a.n, r.l.b.n, r.r.a.n, r.r.b.n].join() : '';
+  }
+  var k = M.rovVah({ L: M.rozbal(def.leva), R: M.rozbal(def.prava) });
+  return [k.l.a, k.l.b, k.r.a, k.r.b].join();
+};
+
+/* ---------- PDF: jedna stránka A4 = jeden obrázek JPEG, bez knihoven ---------- */
+M.sestavPdf = function (obr) {
+  var casti = [], delka = 0, ofs = [], i;
+  function txt(s) { var a = new Uint8Array(s.length); for (var j = 0; j < s.length; j++) a[j] = s.charCodeAt(j) & 255; casti.push(a); delka += a.length; }
+  function bin(a) { casti.push(a); delka += a.length; }
+  function obj(n, telo) { ofs[n] = delka; txt(n + ' 0 obj\n' + telo + '\nendobj\n'); }
+  var kids = [], proud = 'q 595.28 0 0 841.89 0 0 cm /Im0 Do Q';
+  for (i = 0; i < obr.length; i++) kids.push((3 + i * 3) + ' 0 R');
+  txt('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+  obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+  obj(2, '<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + obr.length + ' >>');
+  obr.forEach(function (o, j) {
+    var p = 3 + j * 3;
+    obj(p, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /XObject << /Im0 ' + (p + 1) + ' 0 R >> >> /Contents ' + (p + 2) + ' 0 R >>');
+    ofs[p + 1] = delka;
+    txt((p + 1) + ' 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + o.w + ' /Height ' + o.h +
+      ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + o.bajty.length + ' >>\nstream\n');
+    bin(o.bajty);
+    txt('\nendstream\nendobj\n');
+    obj(p + 2, '<< /Length ' + proud.length + ' >>\nstream\n' + proud + '\nendstream');
+  });
+  var pocet = 3 + obr.length * 3, xref = delka;
+  txt('xref\n0 ' + pocet + '\n0000000000 65535 f \n');
+  for (i = 1; i < pocet; i++) txt(('0000000000' + ofs[i]).slice(-10) + ' 00000 n \n');
+  txt('trailer\n<< /Size ' + pocet + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF\n');
+  var out = new Uint8Array(delka), poz = 0;
+  casti.forEach(function (a) { out.set(a, poz); poz += a.length; });
+  return out;
+};
+M.nazevSouboru = function (jmeno) {
+  var s = String(jmeno).toLowerCase();
+  try { s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch (e) { /* starý prohlížeč */ }
+  s = s.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return 'rovnice-na-vahach' + (s ? '-' + s : '') + '.pdf';
+};
+
+/* ---------- vestavěné testy (adresa s ?test=1) ---------- */
+M.testy = function () {
+  var ok = 0, chyby = [];
+  function t(nazev, podm) { if (podm) ok++; else chyby.push(nazev); }
+  var r = M.rozbal;
+  /* účinek a náklon */
+  t('účinek disku na 4', M.ucinek(r([{ p: 4, t: 'd' }]), 1) === 4);
+  t('účinek trojúhelníku na 3', M.ucinek(r([{ p: 3, t: 't' }]), 1) === 9);
+  t('účinek L na 3', M.ucinek(r([{ p: 3, t: 'L' }]), 4) === 12);
+  t('záporná pozice', M.ucinek(r([{ p: -4, t: 'd' }, { p: 2, t: 'L' }]), 5) === 6);
+  var e1 = { L: r([{ p: 1, t: 'L' }, { p: 5, t: 'd' }]), R: r([{ p: 2, t: 'L' }, { p: 1, t: 'd' }]) };
+  t('E1 rovnováha pro x = 4', M.naklon(e1, 4) === 0);
+  t('E1 není rovnováha pro x = 3', M.naklon(e1, 3) !== 0);
+  var e1o = M.kopie(e1); e1o.L.push({ p: 2, t: 'd' }); e1o.R.push({ p: 2, t: 'd' });
+  t('E1 disk na 2 na obě strany nechá váhy rovně', M.naklon(e1o, 4) === 0);
+  var e1l = M.kopie(e1); e1l.L.push({ p: 2, t: 'd' });
+  t('E1 disk jen vlevo váhy nakloní vlevo', M.naklon(e1l, 4) === -1);
+  /* koeficienty a rozmístění */
+  for (var a = 0; a <= 8; a++) for (var b = 0; b <= 40; b++) {
+    var s = M.rozmisti(a, b, false);
+    if (!s) { t('rozmístění ' + a + 'x + ' + b, false); continue; }
+    var k = M.koef(s), plno = false;
+    for (var p = 1; p <= 5; p++) if (M.naKoliku(s, p) > KONF.maxNaKoliku) plno = true;
+    t('rozmístění ' + a + 'x + ' + b, k.a === a && k.b === b && !plno);
+  }
+  t('rozmístění záporné', (function () { var q = M.koef(M.rozmisti(2, -4, true)); return q.a === 2 && q.b === -4; })());
+  t('rozmístění bez záporného ramene odmítne', M.rozmisti(1, -1, false) === null);
+  /* úprava strany */
+  var u = M.aplikuj(e1.R, -1, 0, false);
+  t('ubrat x: L z 2 na 1', M.podpis(u) === '1L 1d');
+  u = M.aplikuj(r([{ p: 5, t: 'd' }]), 0, -1, false);
+  t('ubrat 1: disk z 5 na 4', M.podpis(u) === '4d');
+  u = M.aplikuj(r([{ p: 2, t: 'L' }, { p: -4, t: 'd' }]), 0, 4, true);
+  t('přidat 4 zruší disk na −4', M.podpis(u) === '2L');
+  for (a = 1; a <= 5; a++) for (b = 1; b <= 20; b++) for (var d = 1; d <= b; d++) {
+    var puv = M.rozmisti(a, b, false), po = M.aplikuj(puv, 0, -d, false), kk = po && M.koef(po);
+    t('aplikuj ' + a + 'x+' + b + ' −' + d, !!po && kk.a === a && kk.b === b - d);
+  }
+  /* kroky */
+  t('krok stejný', M.krok({ l: { a: 1, b: 5 }, r: { a: 2, b: 1 } }, { l: { a: 0, b: 5 }, r: { a: 1, b: 1 } }).typ === 'plus');
+  t('krok dělení', M.krok({ l: { a: 2, b: 0 }, r: { a: 0, b: 8 } }, { l: { a: 1, b: 0 }, r: { a: 0, b: 4 } }).k === 2);
+  t('krok různý', M.krok({ l: { a: 1, b: 5 }, r: { a: 2, b: 1 } }, { l: { a: 1, b: 6 }, r: { a: 2, b: 1 } }).typ === 'ruzne');
+  /* parser */
+  function ek(x, y) { return M.ekviv(M.ctiRovnici(x), M.ctiRovnici(y)); }
+  var v = M.cti('2x + 3');
+  t('parser 2x + 3', v.a.n === 2 && v.b.n === 3);
+  v = M.cti('3 + 2·x'); t('parser jiné pořadí', v.a.n === 2 && v.b.n === 3);
+  v = M.cti('2*x-3'); t('parser hvězdička a minus', v.a.n === 2 && v.b.n === -3);
+  v = M.cti('4 · (x − 3)'); t('parser závorka', v.a.n === 4 && v.b.n === -12);
+  v = M.cti('2,5'); t('parser desetinná čárka', v.b.n === 5 && v.b.d === 2);
+  v = M.cti('5/2'); t('parser zlomek', v.b.n === 5 && v.b.d === 2);
+  v = M.cti('−x'); t('parser −x', v.a.n === -1);
+  t('parser odmítne x · x', (function () { try { M.cti('x·x'); return false; } catch (e) { return true; } })());
+  t('parser odmítne nesmysl', M.ctiRovnici('2x + = 3') === null && M.ctiRovnici('abc') === null);
+  t('ekvivalence přeskočený krok', ek('x + 5 = 2x + 1', '4 = x'));
+  t('ekvivalence násobek', ek('2x = 8', 'x = 4'));
+  t('neekvivalence', !ek('x + 5 = 2x + 1', 'x = 5'));
+  t('a + 2 není 2a', !ek('x + 2 = 8', '2x = 8'));
+  t('4 · (x − 3) není 4x + 12', !ek('4 · (x − 3) = 8', '4x + 12 = 8'));
+  t('úprava −2x', M.fmtRov(M.pouzij(M.ctiUpravu('-2x'), M.ctiRovnici('5x + 2 = 2x + 14'))) === '3x + 2 = 14');
+  t('úprava : 3', M.fmtRov(M.pouzij(M.ctiUpravu(': 3'), M.ctiRovnici('3x = 12'))) === 'x = 4');
+  t('formát surový', M.fmtSurovy(r([{ p: 4, t: 'L' }, { p: -4, t: 'd', n: 3 }])) === '4 · (x − 3)');
+  t('formát surový 2', M.fmtSurovy(r([{ p: 2, t: 'L' }, { p: 3, t: 'd' }])) === '2 · x + 3 · 1');
+  t('formát 5 − x', M.fmtVyraz(M.cti('5 − x')) === '5 − x');
+  t('formát zlomek', M.fmtQ(Q(5, 2)) === '2,5' && M.fmtQ(Q(1, 3)) === '1/3' && M.fmtQ(Q(-4)) === '−4');
+  /* úlohy ze zadání */
+  ULOHY.forEach(function (d) {
+    if (d.typ === 'res') {
+      var vahy = { L: r(d.leva), R: r(d.prava) };
+      t('úloha ' + d.id + ' stojí rovně pro x = ' + d.x, M.naklon(vahy, d.x) === 0);
+      var res = M.reseni(M.rovQ(M.rovVah(vahy)));
+      t('úloha ' + d.id + ' má jediné řešení ' + d.x, res && res.d === 1 && res.n === d.x);
+    }
+    if (d.typ === 'zapis') {
+      var rv = M.ctiRovnici(d.rovnice);
+      t('úloha ' + d.id + ' jde přečíst', !!rv);
+      if (rv && d.leva) {
+        t('úloha ' + d.id + ' váhy odpovídají rovnici', M.ekviv(rv, M.rovQ(M.rovVah({ L: r(d.leva), R: r(d.prava) }))));
+        t('úloha ' + d.id + ' řešení ' + d.x, M.reseni(rv).n === d.x && M.reseni(rv).d === 1);
+      }
+      if (rv) {
+        var kr = M.kroky(rv);
+        t('úloha ' + d.id + ' vzorové řešení končí x', M.vyreseno(kr[kr.length - 1].rov));
+      }
+    }
+    ['leva', 'prava'].forEach(function (str) {
+      var st = r(d[str]);
+      for (var p = -5; p <= 5; p++) t('úloha ' + d.id + ' kapacita kolíku', M.naKoliku(st, p) <= KONF.maxNaKoliku);
+    });
+  });
+  var e10 = { e10a: Q(-4), e10b: Q(5, 2), e10c: Q(3), e10d: Q(9) };
+  Object.keys(e10).forEach(function (id) {
+    var d = ULOHY.filter(function (q) { return q.id === id; })[0];
+    t('řešení ' + id, Q.rovno(M.reseni(M.ctiRovnici(d.rovnice)), e10[id]));
+  });
+  /* PDF */
+  (function () {
+    var pdf = M.sestavPdf([{ w: 2, h: 3, bajty: new Uint8Array([255, 216, 1, 2, 3, 255, 217]) }, { w: 2, h: 3, bajty: new Uint8Array([255, 216, 255, 217]) }]);
+    var str = '';
+    for (var i = 0; i < pdf.length; i++) str += String.fromCharCode(pdf[i]);
+    t('PDF hlavička a konec', str.indexOf('%PDF-1.4') === 0 && /%%EOF\n$/.test(str));
+    var sx = +str.match(/startxref\n(\d+)/)[1];
+    t('PDF startxref míří na tabulku', str.substr(sx, 4) === 'xref');
+    var radky = str.substr(sx).split('\n').slice(3, 3 + 8), dobre = true;
+    radky.forEach(function (r, j) { if (str.substr(+r.slice(0, 10), String(j + 1).length + 6) !== (j + 1) + ' 0 obj') dobre = false; });
+    t('PDF odkazy na objekty sedí', dobre && radky.length === 8);
+    t('PDF dvě stránky', /\/Count 2/.test(str));
+    t('název souboru bez diakritiky', M.nazevSouboru('Žofie Nováková') === 'rovnice-na-vahach-zofie-novakova.pdf');
+  })();
+  /* generátor */
+  ['jedna', 'obe', 'zapor', 'zavorka', 'bezvah', 'ucinky'].forEach(function (vz) {
+    for (var i = 0; i < 60; i++) {
+      var g = M.generuj(vz);
+      if (!g) { t('generátor ' + vz, false); continue; }
+      if (vz === 'bezvah') { t('generátor bezvah', !!M.reseni(M.ctiRovnici(g.rovnice))); continue; }
+      var vh = { L: r(g.leva), R: r(g.prava) }, plne = false;
+      [vh.L, vh.R].forEach(function (st) { for (var p = -5; p <= 5; p++) if (M.naKoliku(st, p) > KONF.maxNaKoliku) plne = true; });
+      if (vz === 'ucinky') { t('generátor ucinky', !plne); continue; }
+      var rs = M.reseni(M.rovQ(M.rovVah(vh)));
+      t('generátor ' + vz + ' rovnováha', M.naklon(vh, g.x) === 0 && !plne);
+      t('generátor ' + vz + ' řešení 1 až 9', rs && rs.d === 1 && rs.n === g.x && g.x >= 1 && g.x <= 9);
+      t('generátor ' + vz + ' se neopakuje', M.generuj(vz, g.sig).sig !== g.sig);
+    }
+  });
+  /* texty průvodce: nejvýš dvě věty, na konci otázka nebo výzva */
+  function zprava(nazev, s) {
+    var vety = s.replace(/\{[a-zA-Z]+\}/g, 'n').split(/[.?!]+(?:\s|$)/).filter(function (q) { return q.trim(); });
+    t('průvodce nejvýš dvě věty: ' + nazev, vety.length <= 2);
+    t('průvodce končí otázkou nebo výzvou: ' + nazev, /[?.]$/.test(s.trim()));
+    t('průvodce bez křížku: ' + nazev, !/[×✕]/.test(s) && !/\d\s*x\s*\d/.test(s));
+  }
+  Object.keys(T.pr).forEach(function (kl) { zprava(kl, T.pr[kl]); });
+  ['res', 'zapis'].forEach(function (typ) {
+    zprava(typ + '1', T.nap[typ][1]);
+    [2, 3].forEach(function (st) { Object.keys(T.nap[typ][st]).forEach(function (kl) { zprava(typ + st + kl, T.nap[typ][st][kl]); }); });
+  });
+  Object.keys(T.nap.faze).forEach(function (kl) { T.nap.faze[kl].forEach(function (s, i) { zprava(kl + i, s); }); });
+  Object.keys(UKAZKY).forEach(function (kl) {
+    UKAZKY[kl].forEach(function (uk, i) {
+      zprava('ukázka ' + kl + i, uk.text);
+      t('ukázka ' + kl + i + ' před', M.naklon({ L: r(uk.leva), R: r(uk.prava) }, uk.x) === 0);
+      t('ukázka ' + kl + i + ' po', M.naklon({ L: r(uk.po.leva), R: r(uk.po.prava) }, uk.x) === 0);
+    });
+  });
+  ULOHY.forEach(function (d) {
+    (d.napovedy || []).forEach(function (s, i) { zprava(d.id + ' nápověda ' + i, s); });
+    ['nesplneno', 'poSpatne', 'poHotovo', 'bezX'].forEach(function (kl) { if (d[kl]) zprava(d.id + ' ' + kl, d[kl]); });
+  });
+  return { ok: ok, chyby: chyby };
+};
+
+/* =====================================================================
+   ÚLOŽIŠTĚ: jen localStorage, žádná jména, vše v try a catch
+   ===================================================================== */
+/* Záznam u etapy: cas = aktivní práce v ms ; ot = počty otázek průvodce 1. až 4. stupně ;
+   ch = chyby podle druhu ; tip = [správné, všechny] ; dv = kolik dvojčat ; vahy = kolikrát si ukázal(a) váhy. */
+function novaEtapa() { return { hotovo: false, stav: null, napoved: 0, dvojcat: 0, cas: 0, ot: [0, 0, 0, 0], ch: {}, tip: [0, 0], dv: 0, vahy: 0 }; }
+function novyPostup() {
+  var et = {};
+  ETAPY.forEach(function (e) { et[e.id] = novaEtapa(); });
+  return { v: KONF.verze, zacato: false, etapa: 'e1', index: 0, dvoj: null, etapy: et, texty: {}, e2: { serie: 0, pocet: 0 } };
+}
+var Uloziste = {
+  nacti: function () {
+    try {
+      var s = window.localStorage.getItem(KONF.klic);
+      if (!s) return null;
+      var o = JSON.parse(s), n = novyPostup();
+      if (!o || o.v !== KONF.verze || !o.etapy) return null;
+      ETAPY.forEach(function (e) {
+        var vzor = n.etapy[e.id], st = o.etapy[e.id] || vzor;
+        Object.keys(vzor).forEach(function (k) { if (st[k] == null) st[k] = vzor[k]; });
+        o.etapy[e.id] = st;
+      });
+      if (!o.texty) o.texty = {};
+      if (!o.e2) o.e2 = n.e2;
+      if (!o.etapy[o.etapa]) { o.etapa = 'e1'; o.index = 0; o.dvoj = null; }
+      return o;
+    } catch (e) { return null; }
+  },
+  uloz: function (o) { try { window.localStorage.setItem(KONF.klic, JSON.stringify(o)); } catch (e) { /* bez úložiště to běží dál */ } },
+  smaz: function () { try { window.localStorage.removeItem(KONF.klic); } catch (e) { /* nic */ } }
+};
+
+/* =====================================================================
+   ZOBRAZENÍ
+   ===================================================================== */
+var P = null;   /* uložený postup */
+var U = null;   /* právě běžící úloha */
+var A = { pohled: 'uvod', ucitel: false, uhel: 0, odlozena: null, reseni: false, cas: Date.now(), kolik: 'L:1', smazat: false };
+var REDUK = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+var G = { sirka: 760, stred: 380, roztec: 62, krok: 30, mezera: 46 };
+
+function $(id) { return document.getElementById(id); }
+function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function dopln(s, o) { return s.replace(/\{(\w+)\}/g, function (m, k) { return o[k] != null ? o[k] : m; }); }
+function uloz() { Uloziste.uloz(P); }
+function tl(text, akce, o) {
+  o = o || {};
+  return '<button type="button" id="a-' + akce + (o.p != null ? '-' + o.p : '') + '" data-akce="' + akce + '"' +
+    (o.p != null ? ' data-p="' + o.p + '"' : '') + ' class="tl' + (o.c ? ' ' + o.c : '') + '"' + (o.dis ? ' disabled' : '') +
+    (o.press != null ? ' aria-pressed="' + (o.press ? 'true' : 'false') + '"' : '') + (o.aria ? ' aria-label="' + o.aria + '"' : '') + '>' + text + '</button>';
+}
+/* Překreslí část stránky a vrátí fokus tam, kde byl. */
+function obnov(fn) {
+  var a = document.activeElement, id = a && a.id, ss = null;
+  try { ss = a.selectionStart; } catch (e) { ss = null; }
+  fn();
+  if (id) {
+    var n = $(id);
+    if (n && n !== document.activeElement) {
+      try { n.focus({ preventScroll: true }); if (ss != null && n.setSelectionRange) n.setSelectionRange(ss, ss); } catch (e) { /* nic */ }
+    }
+  }
+}
+function fokus(id) { setTimeout(function () { var n = $(id); if (n) { try { n.focus({ preventScroll: true }); } catch (e) { /* nic */ } } }, 0); }
+
+/* Rozměry kresby. Se záporným ramenem se výška řídí nejvyšším sloupcem závaží. */
+function geom(zapor, v) {
+  var nb = KONF.maxNaKoliku, na = 0;
+  if (zapor) {
+    nb = 2; na = 2;
+    if (v) ['L', 'R'].forEach(function (s) {
+      var c = {};
+      v[s].forEach(function (z) { c[z.p] = (c[z.p] || 0) + 1; });
+      Object.keys(c).forEach(function (k) { if (+k > 0) nb = Math.max(nb, c[k]); else na = Math.max(na, c[k]); });
+    });
+    nb = Math.min(KONF.maxNaKoliku, nb + 1); na = Math.min(KONF.maxNaKoliku, na + 1);
+  }
+  var by = zapor ? 90 + G.krok * na : 60, zaklad = by + (zapor ? 44 : 56) + G.krok * nb;
+  return { by: by, byZ: by - G.mezera, vyska: zaklad + 22, zaklad: zaklad, nb: nb, na: na };
+}
+function svgZavazi(t, x, y, o) {
+  o = o || {};
+  var tvar = t === 'd' ? '<circle r="13.5"/>'
+    : t === 't' ? '<polygon points="0,-15 16,12 -16,12"/>'
+    : t === 'h' ? '<polygon points="15.5,0 7.75,13.4 -7.75,13.4 -15.5,0 -7.75,-13.4 7.75,-13.4"/>'
+    : '<rect x="-13.5" y="-13.5" width="27" height="27" rx="2"/>';
+  var txt = o.txt != null ? o.txt : (t === 'L' ? 'L' : KONF.hmotnosti[t]);
+  return '<g class="zav zav-' + t + (o.cls ? ' ' + o.cls : '') + '" transform="translate(' + x.toFixed(1) + ',' + y.toFixed(1) + ')"' +
+    (o.data || '') + '>' + tvar + '<text y="' + (t === 't' ? 3 : 0) + '" dy=".35em">' + txt + '</text></g>';
+}
+function ikona(t) { return '<svg viewBox="-20 -20 40 40" aria-hidden="true" focusable="false">' + svgZavazi(t, 0, 0) + '</svg>'; }
+function popisZavazi(t) { return t === 'L' ? 'Záhadné závaží L' : T.Nazvy[t] + ', hmotnost ' + KONF.hmotnosti[t]; }
+
+/* Vykreslí váhy do SVG. o: zapor, uhel, drzene, cisloL, vyber, duchove, edit, ucinky */
+function kresliVahy(svg, v, o) {
+  var g = geom(o.zapor, v), cx = G.stred, by = g.by, th = o.uhel * Math.PI / 180, cos = Math.cos(th), sin = Math.sin(th), h = '', p, i;
+  svg.setAttribute('viewBox', '0 0 ' + G.sirka + ' ' + g.vyska);
+  svg.classList.toggle('pevne', !o.edit);
+  h += '<path class="stojan" d="M' + cx + ',' + by + ' L' + (cx - 38) + ',' + g.zaklad + ' L' + (cx + 38) + ',' + g.zaklad + ' Z"/>';
+  h += '<line class="stojan" x1="' + (cx - 170) + '" y1="' + g.zaklad + '" x2="' + (cx + 170) + '" y2="' + g.zaklad + '"/>';
+  if (o.drzene) {
+    [-1, 1].forEach(function (z) {
+      var x = cx + z * 346;
+      h += '<line class="podpera" x1="' + x + '" y1="' + (by + 3) + '" x2="' + x + '" y2="' + g.zaklad + '"/>' +
+           '<line class="podpera" x1="' + (x - 9) + '" y1="' + (by + 3) + '" x2="' + (x + 9) + '" y2="' + (by + 3) + '"/>' +
+           '<line class="podpera" x1="' + (x - 9) + '" y1="' + g.zaklad + '" x2="' + (x + 9) + '" y2="' + g.zaklad + '"/>';
+    });
+  }
+  var strany = ['L', 'R'], pozice = [];
+  for (p = 1; p <= KONF.maxPozice; p++) pozice.push(p);
+  if (o.zapor) for (p = 1; p <= KONF.maxPozice; p++) pozice.push(-p);
+  /* zóny kolíků: cíl pro klik, tažení i klávesnici */
+  if (o.edit) {
+    strany.forEach(function (s) {
+      pozice.forEach(function (pp) {
+        var d = (s === 'L' ? -1 : 1) * G.roztec * Math.abs(pp), klic = s + ':' + pp;
+        var co = v[s].filter(function (z) { return z.p === pp; }).map(function (z) { return T.nazvy[z.t]; });
+        h += '<g class="kolik" id="k-' + s + '-' + pp + '" data-kolik="' + klic + '" tabindex="' + (A.kolik === klic ? 0 : -1) + '" role="button" aria-label="' +
+          (s === 'L' ? 'Levá' : 'Pravá') + ' strana, pozice ' + String(pp).replace('-', '−') + ': ' + (co.length ? co.join(', ') : 'prázdný kolík') + '">' +
+          '<rect class="zona" x="' + (cx + d - 30) + '" y="' + (pp > 0 ? by + 2 : g.byZ - 16 - G.krok * g.na) + '" width="60" height="' + (14 + G.krok * (pp > 0 ? g.nb : g.na)) + '" rx="2"/></g>';
+      });
+    });
+  }
+  /* ramena */
+  if (o.zapor) {
+    h += '<line class="stojan" x1="' + cx + '" y1="' + by + '" x2="' + cx + '" y2="' + g.byZ + '"/>';
+    h += '<g transform="rotate(' + (-o.uhel).toFixed(2) + ' ' + cx + ' ' + g.byZ + ')"><line class="rameno zadni" x1="' + (cx - 336) + '" y1="' + g.byZ + '" x2="' + (cx + 336) + '" y2="' + g.byZ + '"/>';
+    if (Math.abs(o.uhel) < 0.5) for (p = 1; p <= KONF.maxPozice; p++) [-1, 1].forEach(function (z) {
+      h += '<text class="cislo" x="' + (cx + z * G.roztec * p - 23) + '" y="' + (g.byZ - 7) + '">−' + p + '</text>';
+    });
+    h += '</g><circle class="cep" cx="' + cx + '" cy="' + g.byZ + '" r="3.5"/>';
+  }
+  h += '<g transform="rotate(' + o.uhel.toFixed(2) + ' ' + cx + ' ' + by + ')"><line class="rameno" x1="' + (cx - 336) + '" y1="' + by + '" x2="' + (cx + 336) + '" y2="' + by + '"/>';
+  for (p = 1; p <= KONF.maxPozice; p++) [-1, 1].forEach(function (z) {
+    h += '<text class="cislo" x="' + (cx + z * G.roztec * p) + '" y="' + (by - 8) + '">' + p + '</text>';
+  });
+  h += '</g><circle class="cep" cx="' + cx + '" cy="' + by + '" r="4.5"/>';
+  /* závaží visí svisle, na zadním rameni stojí */
+  strany.forEach(function (s) {
+    pozice.forEach(function (pp) {
+      var d = (s === 'L' ? -1 : 1) * G.roztec * Math.abs(pp), smer = pp > 0 ? 1 : -1;
+      var X = cx + d * cos, Y = pp > 0 ? by + d * sin : g.byZ - d * sin, kusy = [], duchove = [];
+      v[s].forEach(function (z, idx) { if (z.p === pp) kusy.push({ z: z, i: idx }); });
+      if (o.duchove && o.duchove[s]) duchove = o.duchove[s].filter(function (z) { return z.p === pp; });
+      var n = kusy.length + duchove.length;
+      h += '<line class="hacek" x1="' + X.toFixed(1) + '" y1="' + Y.toFixed(1) + '" x2="' + X.toFixed(1) + '" y2="' + (Y + smer * (n ? G.krok * kusy.length || 9 : 9)).toFixed(1) + '"/>';
+      kusy.forEach(function (k, j) {
+        var vyb = o.vyber && o.vyber.zdroj === 'vahy' && o.vyber.s === s && o.vyber.i === k.i;
+        h += svgZavazi(k.z.t, X, Y + smer * G.krok * (j + 1), {
+          txt: k.z.t === 'L' && o.cisloL != null ? o.cisloL : null, cls: vyb ? 'vybrane' : '', data: ' data-z="' + s + ':' + k.i + '"'
+        });
+      });
+      duchove.forEach(function (z, j) { h += svgZavazi(z.t, X, Y + smer * G.krok * (kusy.length + j + 1), { cls: 'duch' }); });
+    });
+  });
+  if (o.ucinky) {
+    h += '<text class="ucinekText" x="' + (cx - 255) + '" y="' + (g.zaklad + 16) + '">účinek ' + String(o.ucinky.L).replace('-', '−') + '</text>';
+    h += '<text class="ucinekText" x="' + (cx + 255) + '" y="' + (g.zaklad + 16) + '">účinek ' + String(o.ucinky.R).replace('-', '−') + '</text>';
+  }
+  svg.innerHTML = h;
+}
+
+/* Co se má právě kreslit: úloha, nebo náhled (zkouška, váhy podle řádku, ukázka). */
+function stul() {
+  var n = U.nahled;
+  if (n) return { vahy: n.vahy, x: n.x, zapor: !!n.zapor, cisloL: n.cisloL, pusteno: !!n.pusteno, edit: false, ucinky: !!n.ucinky, duchove: n.duchove };
+  return { vahy: U.vahy, x: U.x, zapor: !!U.zapor, cisloL: U.def.typ === 'zvlastni' ? U.x : null, pusteno: U.pusteno, edit: muzeStavet(),
+           ucinky: !!U.ukazUcinky, duchove: U.duchove };
+}
+function cilUhlu() { var s = stul(); return s.pusteno ? M.naklon(s.vahy, s.x) * (s.zapor ? KONF.uhelZapor : KONF.uhel) : 0; }
+function kresliVahyHl() {
+  if (!U) return;
+  var s = stul(), svg = $('vahy');
+  var uc = s.ucinky ? { L: M.ucinek(s.vahy.L, s.x), R: M.ucinek(s.vahy.R, s.x) } : null;
+  var akt = document.activeElement, id = akt && svg.contains(akt) ? akt.id : null;
+  kresliVahy(svg, s.vahy, { zapor: s.zapor, uhel: A.uhel, drzene: !s.pusteno, cisloL: s.cisloL, vyber: U.nahled ? null : U.vyber,
+                            duchove: s.duchove, edit: s.edit, ucinky: uc });
+  if (id && $(id)) { try { $(id).focus({ preventScroll: true }); } catch (e) { /* nic */ } }
+}
+var animId = 0;
+function animuj(cil) {
+  var od = A.uhel, id = ++animId;
+  if (REDUK || od === cil) { A.uhel = cil; kresliVahyHl(); return; }
+  var t0 = null;
+  function krok(t) {
+    if (id !== animId) return;
+    if (t0 === null) t0 = t;
+    var u = Math.min(1, (t - t0) / KONF.animace), e = u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
+    A.uhel = od + (cil - od) * e;
+    kresliVahyHl();
+    if (u < 1) window.requestAnimationFrame(krok); else A.uhel = cil;
+  }
+  window.requestAnimationFrame(krok);
+}
+function hlasStav(text) {
+  var el = $('stavVah');
+  if (!U) { el.textContent = ''; return; }
+  if (!text) {
+    var s = stul();
+    if (!s.pusteno) text = s.edit ? T.vahy.drzene : T.vahy.drzenePevne;
+    else { var n = M.naklon(s.vahy, s.x); text = n === 0 ? T.vahy.rovne : (n < 0 ? T.vahy.leva : T.vahy.prava); }
+  }
+  if (el.textContent !== text) el.textContent = text;
+}
+
+function ulohyEtapy(id) { return ULOHY.filter(function (d) { return d.etapa === id; }); }
+function indexEtapy(id) { for (var i = 0; i < ETAPY.length; i++) if (ETAPY[i].id === id) return i; return -1; }
+function odemceno(id) { var i = indexEtapy(id); return A.ucitel || i === 0 || P.etapy[ETAPY[i - 1].id].hotovo || P.etapy[id].hotovo; }
+
+function ukaz(pohled) {
+  A.pohled = pohled;
+  ['uvod', 'plocha', 'zaver', 'oapl', 'export'].forEach(function (p) {
+    $(p).hidden = p !== pohled;
+    if (p !== pohled && p !== 'plocha') $(p).innerHTML = '';   /* skrytý pohled nesmí držet stejná id */
+  });
+  if (pohled === 'uvod') kresliUvod();
+  if (pohled === 'zaver') kresliZaver();
+  if (pohled === 'oapl') kresliOAplikaci();
+  if (pohled === 'export') kresliExport();
+  kresliZahlavi();
+}
+function kresliZahlavi() {
+  var h = '', r = '', o = '';
+  var uvnitr = A.pohled !== 'uvod';
+  if (uvnitr) {
+    ETAPY.forEach(function (e, i) {
+      if (i === 6) h += '<span class="delic" aria-hidden="true"></span>';
+      var st = P.etapy[e.id], nyni = A.pohled === 'plocha' && U && U.def.etapa === e.id, zam = !odemceno(e.id);
+      h += '<button type="button" id="et-' + e.id + '" data-akce="etapa" data-p="' + e.id + '" class="' + (st.hotovo ? 'hotova ' : '') + (nyni ? 'nyni ' : '') +
+        (e.rozsireni ? 'rozs' : '') + '"' + (zam ? ' disabled' : '') + ' title="' + (i + 1) + ' ' + e.nazev + (e.rozsireni ? ' (rozšíření, ' + e.obtiznost + ')' : '') + '"' +
+        ' aria-label="Etapa ' + (i + 1) + ': ' + e.nazev + (e.rozsireni ? ', rozšíření, ' + e.obtiznost : '') + (st.hotovo ? ', hotová' : '') + (zam ? ', zamčená' : '') + '"' +
+        (nyni ? ' aria-current="step"' : '') + '><span>' + (i + 1) + '</span></button>';
+    });
+    h += '<span class="delic" aria-hidden="true"></span><button type="button" id="et-zaver" data-akce="zaver" class="' + (A.pohled === 'zaver' ? 'nyni' : '') +
+      '" title="Závěr" aria-label="Závěr"><span>Z</span></button>';
+    if (A.pohled === 'plocha' && U && U.def.typ !== 'volne' && U.faze !== 'konec') {
+      ['ukazka', 'spolu', 'sam'].forEach(function (k) {
+        var on = U.def.opora === k;
+        r += '<li class="' + (on ? 'on' : '') + '"' + (on ? ' aria-current="true"' : '') + '><i></i>' + T.rezimy[k] + '</li>';
+      });
+    }
+    var veVolnych = A.pohled === 'plocha' && U && U.def.typ === 'volne';
+    o += tl(veVolnych ? 'Zpět z volných vah' : 'Volné váhy', 'volne', { c: 'maly tichy' });
+    o += tl('Export', 'export', { c: 'maly' + (A.pohled === 'export' ? '' : ' tichy'), press: A.pohled === 'export' ? true : null });
+  } else {
+    if (A.ucitel) o += tl('Volné váhy', 'volne', { c: 'maly tichy' });
+    o += tl('O aplikaci', 'oaplikaci', { c: 'maly tichy' });
+  }
+  obnov(function () { $('etapy').innerHTML = h; $('rezim').innerHTML = r; $('odkazy').innerHTML = o; $('etapy').hidden = !uvnitr; });
+}
+function kresliUvod() {
+  var h = '<div class="tmavy"><h2>' + (P.zacato ? 'Vítej zpátky' : 'Začínáme') + '</h2><p class="velke">' + T.uvod + '</p><div class="rada">';
+  if (P.zacato) h += tl('Pokračovat', 'pokracovat', { c: 'hlavni' }) + tl('Začít znovu', 'znovuVse');
+  else h += tl('Začít', 'zacit', { c: 'hlavni' });
+  h += '</div></div>';
+  $('uvod').innerHTML = h;
+  fokus(P.zacato ? 'a-pokracovat' : 'a-zacit');
+}
+function kresliZaver() {
+  var h = '<div class="obal"><h2>Závěr</h2><ul class="prehled">';
+  ETAPY.forEach(function (e, i) {
+    var st = P.etapy[e.id], s = st.hotovo ? (st.stav || 'otazky') : 'ne';
+    h += '<li><span class="zn ' + s + '" aria-hidden="true"></span><span>' + (i + 1) + ' ' + e.nazev + (e.rozsireni ? ' (rozšíření)' : '') +
+      '</span><span class="st">' + T.stavy[s] + '</span></li>';
+  });
+  h += '</ul>';
+  ['e9a', 'e9b'].forEach(function (id) {
+    if (P.texty[id]) h += '<p><span class="nadpisek">Zvláštní váhy</span> ' + esc(P.texty[id]) + '</p>';
+  });
+  h += '<div class="box"><label for="v-zaver"><strong>Proč smím na obou stranách rovnice udělat totéž?</strong> Napiš jednu větu vlastními slovy.</label>' +
+    '<textarea id="v-zaver" data-text="zaver" rows="2">' + esc(P.texty.zaver || '') + '</textarea></div>' +
+    '<p>Hotovo pro dnešek? Klikni na Export. Vznikne PDF pro učitele, které nahraješ do MS Teams.</p><div class="rada">' + tl('Export pro učitele', 'export', { c: 'hlavni' }) + tl('Zpět k úlohám', 'pokracovat') + tl('O aplikaci', 'oaplikaci', { c: 'tichy' }) + '</div></div>';
+  $('zaver').innerHTML = h;
+}
+function kresliOAplikaci() {
+  $('oapl').innerHTML = '<div class="obal"><h2>O aplikaci</h2>' +
+    '<p>Aplikace vede od pákových vah k řešení lineárních rovnic ekvivalentními úpravami. Nejdřív pomáhá hodně, potom čím dál méně. Na konci řešíš rovnice bez vah.</p>' +
+    '<p><span class="nadpisek">Původ pomůcky</span> Fyzickou váhu se dvěma rameny navrhl a ověřil Ing. Štěpán Dvořáček (závěrečná práce, Pedagogická fakulta Masarykovy univerzity, Brno 2024). Aplikace z jeho pomůcky vychází. Děkujeme.</p>' +
+    '<p><span class="nadpisek">Soukromí</span> Aplikace nic neodesílá a nepoužívá cookies. Postup se ukládá jen v tomhle prohlížeči a neobsahuje žádná jména. Jméno napíšeš až při exportu a je jen v PDF, které si stáhneš.</p>' +
+    '<p><span class="nadpisek">Ovládání</span> Závaží táhni myší nebo prstem. Jde to i klikem na závaží a potom na kolík. Na klávesnici vybírej kolík šipkami, Enter závaží bere a pokládá, Delete ho sundá.</p>' +
+    '<div class="rada">' + tl('Zpět', 'zpetZOAplikaci', { c: 'hlavni' }) + '</div></div>';
+  fokus('a-zpetZOAplikaci');
+}
+
+function nadpisek() {
+  var d = U.def;
+  if (d.typ === 'volne') return 'Volné váhy';
+  var i = indexEtapy(d.etapa), e = ETAPY[i], s = 'Etapa ' + (i + 1) + ' – ' + e.nazev;
+  if (e.rozsireni) s += ' – rozšíření, ' + e.obtiznost;
+  if (U.dvojce) s += ' – dvojče úlohy';
+  else if (d.etapa === 'e2') s += ' – váhy ' + (P.e2.pocet + 1);
+  else { var vse = ulohyEtapy(d.etapa); s += ' – úloha ' + (vse.indexOf(d) + 1 || 1) + (/^[3467]$/.test(String(vse.length)) ? ' ze ' : ' z ') + vse.length; }
+  return s;
+}
+function zasobnikTypu() { return U.def.zasobnik || ['d', 't', 'h', 'L']; }
+function textPocitadla() {
+  var d = U.def;
+  if (U.nahled || d.zamceno || d.typ === 'zapis' || d.typ === 'volne' || U.skryjPocitadlo || U.faze === 'konec') return '';
+  var z = M.rovVah(U.zaklad), n = M.rovVah(U.vahy);
+  function f(a, b) { return M.fmtZmena(M.vyrazQ({ a: b.a - a.a, b: b.b - a.b })) || 'beze změny'; }
+  return 'Vlevo: ' + f(z.l, n.l) + '. Vpravo: ' + f(z.r, n.r) + '.';
+}
+
+function kresliUkol() {
+  obnov(function () {
+    var el = $('ukol'), d = U.def, h = '';
+    el.classList.toggle('tmavyUkol', U.faze === 'konec');
+    if (U.faze === 'konec') { el.innerHTML = htmlKonecEtapy(); return; }
+    h += '<p class="nadpisek">' + nadpisek() + '</p><p class="zadani">' + d.text + '</p>';
+    if (d.typ === 'pokus') h += htmlPokus(d);
+    else if (d.typ === 'veta') h += htmlVeta(d);
+    else if (d.typ === 'res') h += htmlRes(d);
+    else if (d.typ === 'zapis') h += htmlZapis(d);
+    else if (d.typ === 'zvlastni') h += htmlZvlastni(d);
+    else if (d.typ === 'volne') h += htmlVolne();
+    if (U.pozn) h += '<p class="poznamka" role="status">' + U.pozn + '</p>';
+    if (A.ucitel && d.typ !== 'volne') {
+      h += '<div class="ucitelBar"><span class="nadpisek">Učitelský režim</span>' + tl(A.reseni ? 'Skrýt řešení' : 'Zobrazit řešení', 'reseni', { c: 'maly' }) +
+        tl('Přeskočit úlohu', 'preskoc', { c: 'maly' }) + tl(A.smazat ? 'Opravdu smazat?' : 'Smazat postup', 'smazat', { c: 'maly' }) + '</div>';
+    }
+    el.innerHTML = h;
+  });
+}
+function htmlPokus(d) {
+  var h = '';
+  if (!U.hotovo) {
+    if (d.ucinky) {
+      h += '<div class="rada"><label class="stitekPole" for="v-ul">účinek vlevo</label><input type="text" class="kratky" id="v-ul" data-vstup="ul" inputmode="numeric" autocomplete="off" value="' + esc(U.vstupy.ul || '') + '">' +
+        '<label class="stitekPole" for="v-up">účinek vpravo</label><input type="text" class="kratky" id="v-up" data-vstup="up" inputmode="numeric" autocomplete="off" value="' + esc(U.vstupy.up || '') + '"></div>';
+    }
+    if (d.tip !== false) {
+      h += '<div class="rada" role="group" aria-label="Tvůj tip"><span class="stitekPole">tvůj tip</span>' +
+        T.tipy.map(function (t, i) { return tl(t, 'tip', { p: i, press: U.tip === i }); }).join('') + '</div>';
+    }
+    return h;
+  }
+  h += '<p class="vysledek">' + (d.tip !== false ? 'Tvůj tip: ' + T.tipy[U.tip] + '. ' : '') + 'Váhy: ' + T.vysledky[U.vysledek.nak + 1] + '.';
+  if (d.etapa === 'e2') {
+    var ser = P.e2.serie + (U.vysledek.spravne ? 1 : 0);
+    if (!U.vysledek.spravne) ser = 0;
+    h += ' <span class="sr">Správné tipy po sobě: ' + ser + ' ze ' + KONF.e2Serie + '.</span><span class="serie" aria-hidden="true">';
+    for (var i = 0; i < KONF.e2Serie; i++) h += '<i class="' + (i < ser ? 'on' : '') + '"></i>';
+    h += '</span>';
+  }
+  h += '</p><div class="rada">' + tl('Dál', 'dal', { c: 'hlavni' }) + '</div>';
+  return h;
+}
+function htmlVeta(d) {
+  if (U.hotovo) return '<p class="vysledek">' + d.veta.replace('…', d.moznosti[d.spravne]) + '.</p><div class="rada">' + tl('Dál', 'dal', { c: 'hlavni' }) + '</div>';
+  return '<div class="rada"><strong>' + d.veta + '</strong>' + d.moznosti.map(function (m, i) { return tl(m, 'moznost', { p: i, press: U.volba === i }); }).join('') + '</div>';
+}
+function htmlRes() {
+  if (U.hotovo) return '<p class="vysledek">L váží ' + U.x + '. Zkouška na původních vahách vyšla.</p><div class="rada">' + tl('Dál', 'dal', { c: 'hlavni' }) + '</div>';
+  if (U.faze === 'ukazka' && U.otazka) {
+    return '<div class="rada" role="group" aria-label="' + U.otazka.text + '"><strong>' + U.otazka.text + '</strong>' +
+      U.otazka.volby.map(function (v, i) { return tl(v, 'ukazkaVolba', { p: i }); }).join('') + '</div>';
+  }
+  if (U.faze === 'prace' && !U.nahled && M.izolovano(M.rovVah(U.zaklad))) {
+    return '<div class="rada"><label class="stitekPole" for="v-odp">L váží</label><input type="text" class="kratky" id="v-odp" data-vstup="odp" data-enter="zkouska" inputmode="numeric" autocomplete="off" value="' +
+      esc(U.vstupy.odp || '') + '">' + tl('Zkouška na původních vahách', 'zkouska', { c: 'hlavni' }) + '</div>';
+  }
+  return '';
+}
+function htmlZapis(d) {
+  var h = '';
+  if (U.hotovo) return '<p class="vysledek">Zkouška vyšla: x = ' + M.fmtQ(U.resX) + '.</p><div class="rada">' + tl('Dál', 'dal', { c: 'hlavni' }) + '</div>';
+  if (U.faze === 'dosazeni') {
+    h += '<div class="rada"><span>Zkouška: dosaď x = ' + M.fmtQ(U.resX) + ' do první rovnice.</span></div><div class="rada">' +
+      '<label class="stitekPole" for="v-lv">levá strana</label><input type="text" class="kratky" id="v-lv" data-vstup="lv" data-enter="overit" autocomplete="off" value="' + esc(U.vstupy.lv || '') + '">' +
+      '<label class="stitekPole" for="v-pv">pravá strana</label><input type="text" class="kratky" id="v-pv" data-vstup="pv" data-enter="overit" autocomplete="off" value="' + esc(U.vstupy.pv || '') + '">' +
+      tl('Ověřit zkoušku', 'overit', { c: 'hlavni' }) + '</div>';
+  }
+  if (d.leva && U.faze === 'radek') h += '<div class="rada">' + tl(U.ukazVahy ? 'Schovat váhy' : 'Ukázat na vahách', 'ukazVahy', { c: 'maly' }) + '</div>';
+  return h;
+}
+function htmlZvlastni(d) {
+  if (U.hotovo) return '<p class="vysledek">' + d.otazka + ' ' + d.moznosti[d.spravne].charAt(0).toUpperCase() + d.moznosti[d.spravne].slice(1) + '.</p><div class="rada">' + tl('Dál', 'dal', { c: 'hlavni' }) + '</div>';
+  var h = '<div class="rada"><strong>' + d.otazka + '</strong>' + d.moznosti.map(function (m, i) { return tl(m, 'moznost', { p: i, press: U.volba === i, c: 'maly' }); }).join('') + '</div>';
+  if (U.volbaOk) {
+    h += '<div class="rada"><label for="v-slova">Zapiš vlastními slovy, co jsi zjistil(a) a proč:</label>' +
+      '<input type="text" id="v-slova" class="vstupRadek" style="font:inherit" data-vstup="slova" data-enter="slovaHotovo" autocomplete="off" value="' + esc(U.vstupy.slova || '') + '">' +
+      tl('Hotovo', 'slovaHotovo', { c: 'hlavni' }) + '</div>';
+  }
+  return h;
+}
+function htmlVolne() {
+  var v = U.volby;
+  function z(k, popis) { return '<label class="zatrh"><input type="checkbox" id="pr-' + k + '" data-prepni="' + k + '"' + (v[k] ? ' checked' : '') + '>' + popis + '</label>'; }
+  return '<div class="rada">' + z('ucinky', 'účinky') + z('zapis', 'zápis') + z('zapor', 'záporné rameno') +
+    tl('Vyprázdnit', 'vyprazdnit', { c: 'maly' }) + '</div>';
+}
+function htmlKonecEtapy() {
+  var e = U.hotovaEtapa, i = indexEtapy(e), st = P.etapy[e], dalsi = ETAPY[i + 1];
+  var h = '<p class="nadpisek">Etapa ' + (i + 1) + ' je hotová</p><p class="zadani">' + ETAPY[i].nazev + ': ' + T.stavy[st.stav || 'otazky'] + '.';
+  if (e === 'e6') h += ' Jádro máš za sebou. Rozšíření je pro rychlé: záporné pozice, závorky a rovnice bez vah.';
+  h += '</p><div class="rada">';
+  if (e === 'e6') h += tl('Závěr', 'zaver', { c: 'hlavni' }) + tl('Rozšíření: etapa 7', 'etapa', { p: 'e7' });
+  else if (dalsi) h += tl('Další etapa: ' + (i + 2) + ' ' + dalsi.nazev, 'etapa', { p: dalsi.id, c: 'hlavni' });
+  else h += tl('Závěr', 'zaver', { c: 'hlavni' });
+  return h + '</div>';
+}
+
+function kresliOvladani() {
+  obnov(function () {
+    var el = $('ovladani'), d = U.def, n = U.nahled, s = stul(), h = '';
+    $('pocitadlo').textContent = U.faze === 'konec' ? '' : textPocitadla();
+    el = $('ovlRada');
+    if (U.faze === 'konec') { el.innerHTML = ''; return; }
+    if (!n && (d.typ === 'zvlastni' || d.typ === 'volne') && !U.hotovo) {
+      h += '<span class="stitekPole">L váží</span>' + tl('−', 'xMinus', { c: 'maly', aria: 'Zmenšit hmotnost L' }) +
+        '<strong id="hodnotaX" class="hodnotaX" aria-live="polite">' + U.x + '</strong>' + tl('+', 'xPlus', { c: 'maly', aria: 'Zvětšit hmotnost L' });
+    }
+    if (muzeStavet()) {
+      h += '<div class="zasobnik" role="group" aria-label="Zásobník závaží">';
+      zasobnikTypu().forEach(function (t) {
+        h += '<button type="button" class="tl" id="zas-' + t + '" data-zas="' + t + '" aria-pressed="' +
+          (U.vyber && U.vyber.zdroj === 'zas' && U.vyber.t === t ? 'true' : 'false') + '" aria-label="' + popisZavazi(t) + '" title="' + popisZavazi(t) + '">' + ikona(t) + '</button>';
+      });
+      h += '</div>' + tl('Sundat', 'sundat', { dis: !(U.vyber && U.vyber.zdroj === 'vahy'), c: 'maly' });
+    }
+    var hotovaZk = n && n.typ === 'hotovo';
+    h += tl('Držet', 'drz', { press: !s.pusteno, dis: hotovaZk }) + tl('Pustit váhy', 'pust', { press: s.pusteno, c: s.pusteno ? '' : 'hlavni', dis: hotovaZk });
+    if (n) {
+      if (n.typ !== 'ukaz' && !hotovaZk) h += tl('Zpět k úloze', 'zpet');
+    } else if (!d.zamceno && d.typ !== 'zapis' && !U.hotovo) {
+      if (d.typ === 'res') h += tl('Vrátit krok', 'vrat', { c: 'maly tichy' });
+      if (d.typ !== 'volne') h += tl('Znovu', 'znovu', { c: 'maly tichy' });
+    }
+    el.innerHTML = h;
+  });
+}
+function kresliZapisnik() {
+  obnov(function () {
+    var el = $('zapisnik'), d = U.def, h = '<p class="nadpisek">Zápisník</p>';
+    if (d.typ === 'volne') {
+      if (U.volby.zapis) {
+        var r = M.rovQ(M.rovVah(U.vahy));
+        h += '<ol class="radky"><li>vlevo: ' + M.fmtSurovy(U.vahy.L) + '</li><li>vpravo: ' + M.fmtSurovy(U.vahy.R) + '</li>' +
+          '<li>' + M.fmtVyraz(r.l) + ' ' + (U.pusteno ? (M.naklon(U.vahy, U.x) === 0 ? '=' : '≠') : '?') + ' ' + M.fmtVyraz(r.r) + '</li></ol>';
+      } else h += '<p class="poznamka">Zápis je vypnutý. Zapneš ho nahoře.</p>';
+      el.innerHTML = h; return;
+    }
+    var pise = U.faze === 'pis' || U.faze === 'rozepis' || U.faze === 'radek';
+    h += '<ol class="radky">';
+    U.radky.forEach(function (r, i) {
+      var posl = i === U.radky.length - 1;
+      h += '<li class="' + (r.trida || '') + '"><span class="rov">' + esc(r.txt || M.fmtRov(r.rov)) + '</span>';
+      if (r.upr) h += '<span class="upr">' + KONF.oddelovac + ' ' + esc(r.upr) + '</span>';
+      else if (posl && U.faze === 'radek') {
+        h += '<span class="upr">' + KONF.oddelovac + ' <input type="text" id="v-upr" class="vstupUpr" data-vstup="upr" data-enter="zapsat" autocomplete="off" spellcheck="false" aria-label="Úprava za čarou" placeholder="úprava" value="' + esc(U.vstupy.upr || '') + '"></span>';
+      }
+      h += '</li>';
+    });
+    h += '</ol>';
+    if (pise) {
+      h += '<div class="novy"><input type="text" id="v-radek" class="vstupRadek" data-vstup="radek" data-enter="zapsat" autocomplete="off" spellcheck="false" aria-label="' +
+        (U.faze === 'rozepis' ? 'Rovnice bez závorky' : 'Nový řádek rovnice') + '" placeholder="' + (U.faze === 'rozepis' ? 'rovnice bez závorky' : 'nový řádek') + '" value="' + esc(U.vstupy.radek || '') + '">' +
+        tl('Zapsat', 'zapsat', { c: 'hlavni' }) + '</div>';
+    }
+    if (U.poznZ) h += '<p class="poznamka" role="status">' + U.poznZ + '</p>';
+    if (A.ucitel && A.reseni) h += htmlReseni(d);
+    el.innerHTML = h;
+    el.scrollTop = el.scrollHeight;
+  });
+}
+function htmlReseni(d) {
+  var h = '<div class="reseni"><p class="nadpisek">Řešení pro učitele</p>';
+  if (d.typ === 'res' || d.typ === 'zapis') {
+    var r0 = d.typ === 'zapis' ? M.ctiRovnici(d.rovnice) : M.rovQ(M.rovVah(U.puvod));
+    M.kroky(r0).forEach(function (k) { h += '<div>' + M.fmtRov(k.rov) + (k.upr ? ' ' + KONF.oddelovac + ' ' + k.upr : '') + '</div>'; });
+  } else if (d.typ === 'pokus') {
+    var v = M.kopie(U.puvod);
+    if (d.cil && d.cil.pridej) { v.L = v.L.concat(M.rozbal(d.cil.pridej.leva)); v.R = v.R.concat(M.rozbal(d.cil.pridej.prava)); }
+    h += '<div>účinek vlevo ' + M.ucinek(v.L, U.x) + ' ; vpravo ' + M.ucinek(v.R, U.x) + ' ; váhy: ' + T.vysledky[M.naklon(v, U.x) + 1] + '</div>';
+  } else if (d.moznosti) h += '<div>' + d.moznosti[d.spravne] + '</div>';
+  return h + '</div>';
+}
+function kresliPruvodce() {
+  if (!U) return;
+  var p = U.pr, rec = $('rec'), html = p.zprava ? '<p class="otazka">' + p.zprava + '</p>' : '';
+  if (rec.getAttribute('data-t') !== html) { rec.innerHTML = html; rec.setAttribute('data-t', html); }
+  obnov(function () {
+    var h = '';
+    if (p.volby) h += '<div class="volby" role="group" aria-label="Možnosti">' + p.volby.map(function (v, i) { return tl(v, 'volba', { p: i, c: 'maly' }); }).join('') + '</div>';
+    if (p.tlacitko) h += '<div class="volby">' + tl(p.tlacitko.text, p.tlacitko.akce, { p: p.tlacitko.p, c: 'maly' }) + '</div>';
+    $('recVolby').innerHTML = h;
+    var dole = '';
+    if (p.nabidka) dole += '<p class="nabidka">' + T.pr.nabidka + '</p>';
+    dole += tl(p.nabidka ? 'Ano, zeptej se' : 'Nevím, jak dál', 'nevim', { c: p.nabidka ? 'hlavni' : '' });
+    if (U.unik && !U.hotovo) dole += tl(muzeLehci() ? 'Zkusit podobnou úlohu s větší oporou' : 'Jít dál s oporou', 'unik', { c: 'maly tichy' });
+    $('recDole').innerHTML = (U.def.typ === 'volne' || U.faze === 'konec') ? '' : dole;
+  });
+}
+function kresliPlochu() {
+  if (!U) return;
+  var pl = $('plocha'), d = U.def, st = $('stitek');
+  pl.classList.toggle('bezvah', d.typ === 'zapis' && !U.nahled);
+  pl.classList.toggle('volne', d.typ === 'volne');
+  st.hidden = !U.nahled;
+  st.textContent = U.nahled ? U.nahled.popis : '';
+  kresliZahlavi(); kresliUkol(); kresliVahyHl(); kresliOvladani(); kresliZapisnik(); kresliPruvodce(); hlasStav();
+}
+
+/* =====================================================================
+   PRŮVODCE: stavový automat opory a nápověd
+   ===================================================================== */
+function rekni(text, o) {
+  o = o || {};
+  U.pr.zprava = text; U.pr.volby = o.volby || null; U.pr.tlacitko = o.tlacitko || null;
+  U.pr.nabidka = !!U.chceNabidku; U.chceNabidku = false;
+  kresliPruvodce();
+}
+function mlc() { U.pr.zprava = null; U.pr.volby = null; U.pr.tlacitko = null; U.pr.nabidka = false; kresliPruvodce(); }
+/* Dva nepovedené pokusy stejného druhu: průvodce se nenápadně nabídne. */
+function zaznam(fn) { if (U && U.def.etapa && P.etapy[U.def.etapa]) { fn(P.etapy[U.def.etapa]); A.spina = true; } }
+function zaznamChyby(druh) { zaznam(function (st) { st.ch[druh] = (st.ch[druh] || 0) + 1; }); }
+function zaznamOtazky(stupen) { zaznam(function (st) { st.ot[stupen - 1]++; }); }
+function nezdar(druh, jako) {
+  if (jako !== false) zaznamChyby(jako || druh);
+  U.pokusy[druh] = (U.pokusy[druh] || 0) + 1;
+  if (U.pokusy[druh] >= 2) { U.chceNabidku = true; U.pokusy[druh] = 0; }
+}
+function zapocti(stupen) { U.maxNapoved = Math.max(U.maxNapoved, stupen); }
+function aktRov() {
+  return U.def.typ === 'zapis' ? M.rovCisla(U.radky[U.radky.length - 1].rov) : M.rovVah(U.zaklad);
+}
+function fazeNapovedy() {
+  if (U.faze === 'rozepis' || U.faze === 'pis' || U.faze === 'dosazeni' || U.faze === 'ukazka') return U.faze;
+  return null;
+}
+function clenTxt(k) { k = Math.abs(k); return (k === 1 ? '' : M.fmtCislo(k)) + 'x'; }
+function jedinecne(pole) {
+  var out = [];
+  pole.forEach(function (v) { if (v != null && v !== '' && out.indexOf(v) < 0) out.push(v); });
+  return out;
+}
+function otoc(pole, o) { o = o % pole.length; return pole.slice(o).concat(pole.slice(0, o)); }
+function volbyNapovedy(typ, s) {
+  var c = M.fmtCislo, zm = function (a, b) { return M.fmtZmena({ a: Q(Math.round(a * 1000), 1000), b: Q(Math.round(b * 1000), 1000) }); }, v = null;
+  if (typ === 'res') {
+    if (s.typ === 'obe') v = [clenTxt(s.k), c(Math.abs(s.c) || 1), clenTxt(s.vetsi)];
+    else if (s.typ === 'konst' || s.typ === 'konstZap') v = [c(Math.abs(s.c)), 'x', c(Math.abs(s.o) === Math.abs(s.c) ? Math.abs(s.c) + 1 : Math.abs(s.o))];
+    else if (s.typ === 'nasob') v = [c(s.a), c(s.a + 1), c(Math.abs(s.c))];
+  } else {
+    if (s.typ === 'obe') v = [zm(-s.k, 0), zm(0, -(s.c || 1)), zm(-s.vetsi, 0)];
+    else if (s.typ === 'konst' || s.typ === 'konstZap') v = [zm(0, -s.c), zm(-s.a, 0), zm(0, s.c)];
+    else if (s.typ === 'nasob') v = [': ' + c(s.a), '−' + c(s.a), '· ' + c(s.a)];
+  }
+  if (!v) return null;
+  v = jedinecne(v);
+  return otoc(v, U.radky.length + 1);
+}
+function napovedReseni(stupen) {
+  var typ = U.def.typ, s = M.situace(aktRov()), t = T.nap[typ], par = { a: M.fmtCislo(s.a || 0), c: M.fmtCislo(s.c || 0) };
+  if (stupen === 1) return rekni(t[1]);
+  if (stupen === 2) return rekni(dopln(t[2][s.typ], par));
+  if (stupen === 3 || !UKAZKY[s.typ]) return rekni(dopln(t[3][s.typ], par), { volby: volbyNapovedy(typ, s) });
+  spustUkazku(s.typ);
+}
+/* 4. stupeň: jeden krok předvedený na jiných vahách s jinými čísly. */
+function ubylo(stare, nove) {
+  var zb = nove.map(function (z) { return z.p + z.t; }), out = [];
+  stare.forEach(function (z) { var i = zb.indexOf(z.p + z.t); if (i >= 0) zb.splice(i, 1); else out.push({ p: z.p, t: z.t }); });
+  return out;
+}
+function spustUkazku(typSit) {
+  var kand = UKAZKY[typSit], akt = JSON.stringify(aktRov()), uk = kand[0];
+  for (var i = 0; i < kand.length; i++) {
+    if (JSON.stringify(M.rovVah({ L: M.rozbal(kand[i].leva), R: M.rozbal(kand[i].prava) })) !== akt) { uk = kand[i]; break; }
+  }
+  var n = { typ: 'ukazka', vahy: { L: M.rozbal(uk.leva), R: M.rozbal(uk.prava) }, x: uk.x, zapor: !!uk.zapor, pusteno: false, popis: 'Jiné váhy, jiná čísla', duchove: { L: [], R: [] } };
+  U.nahled = n; U.pr.zprava = null; U.pr.volby = null; A.uhel = 0;
+  kresliPlochu();
+  var u0 = U, k = KONF.krokUkazky;
+  function po(ms, fn) { setTimeout(function () { if (U === u0 && U.nahled === n) fn(); }, ms); }
+  po(k, function () { n.duchove.L = ubylo(n.vahy.L, M.rozbal(uk.po.leva)); n.vahy.L = M.rozbal(uk.po.leva); kresliVahyHl(); });
+  po(2 * k, function () { n.duchove.R = ubylo(n.vahy.R, M.rozbal(uk.po.prava)); n.vahy.R = M.rozbal(uk.po.prava); kresliVahyHl(); });
+  po(3 * k, function () { n.pusteno = true; animuj(cilUhlu()); kresliOvladani(); hlasStav(); rekni(uk.text); });
+}
+
+/* ---------- běh úlohy ---------- */
+function novyBeh(def) {
+  var b = { def: def, dvojce: false, x: def.x, zapor: !!def.zapor, vahy: { L: M.rozbal(def.leva), R: M.rozbal(def.prava) }, radky: [], faze: 'prace',
+            pusteno: false, tip: null, volba: null, vstupy: {}, uroven: 0, urovenF: 0, maxNapoved: 0, pokusy: {}, nahled: null, vyber: null,
+            pr: { zprava: null, volby: null, tlacitko: null, nabidka: false }, vysledek: null, hotovo: false, duchove: null, plan: null };
+  b.puvod = M.kopie(b.vahy); b.zaklad = M.kopie(b.vahy);
+  return b;
+}
+function naplanuj(fn, ms) {
+  var u0 = U;
+  U.plan = fn;
+  setTimeout(function () { if (U === u0 && U.plan === fn) { U.plan = null; fn(); } }, ms);
+}
+function spustUlohu(def, jeDvojce) {
+  U = novyBeh(def);
+  U.dvojce = !!jeDvojce;
+  A.uhel = 0; A.reseni = false; A.smazat = false; A.kolik = 'L:1';
+  if (def.typ === 'res') {
+    var rov = M.rovVah(U.vahy);
+    if (def.surovy) U.radky.push({ txt: M.fmtSurovy(U.vahy.L) + ' = ' + M.fmtSurovy(U.vahy.R), rov: M.rovQ(rov) });
+    if ((!def.skryjUpraveny && !def.rozepis) || !U.radky.length) U.radky.push({ rov: M.rovQ(rov) });
+    if (def.rozepis) { U.faze = 'rozepis'; if (def.opora === 'spolu') U.pr.zprava = T.pr.rozepis; }
+    else if (def.opora === 'ukazka') { U.faze = 'ukazka'; naplanuj(ukazkaKrok, 1300); }
+    else if (def.opora === 'spolu' && def.prvniKrok) { U.faze = 'ukazka'; naplanuj(prvniKrok, 1300); }
+    else if (def.opora === 'spolu') U.pr.zprava = T.nap.res[1];
+  } else if (def.typ === 'zapis') {
+    U.radky.push({ txt: M.hezky(def.rovnice), rov: M.ctiRovnici(def.rovnice) });
+    U.faze = 'radek';
+    if (def.opora === 'spolu') { U.pr.zprava = T.nap.zapis[1]; if (U.dvojce && def.leva) U.ukazVahy = true; }
+    if (U.ukazVahy) obnovNahledRadku();
+  } else if (def.typ === 'zvlastni') {
+    U.radky.push({ rov: M.rovQ(M.rovVah(U.vahy)) });
+  }
+  ukaz('plocha');
+  kresliPlochu();
+  if (def.typ === 'zapis') fokus('v-upr');
+  if (def.typ === 'res' && def.rozepis) fokus('v-radek');
+}
+function spustEtapu(id) {
+  P.etapa = id; P.index = 0; P.dvoj = null; P.etapy[id].dvojcat = 0; P.zacato = true;
+  if (id === 'e2') P.e2 = { serie: 0, pocet: 0 };
+  uloz();
+  spustUlohu(ulohyEtapy(id)[0]);
+}
+function pokracuj() {
+  var seznam = ulohyEtapy(P.etapa), d = P.dvoj || seznam[P.index] || seznam[0];
+  spustUlohu(d, !!P.dvoj && P.etapa !== 'e2');
+}
+function etapaHotova(id, stav) {
+  var st = P.etapy[id], poradi = { sam: 3, otazky: 2, opora: 1 };
+  if (!st.hotovo || (poradi[stav] || 0) > (poradi[st.stav] || 0)) st.stav = stav;
+  st.hotovo = true; P.dvoj = null;
+  var dalsi = ETAPY[indexEtapy(id) + 1];
+  if (dalsi) { P.etapa = dalsi.id; P.index = 0; if (dalsi.id === 'e2') P.e2 = { serie: 0, pocet: 0 }; }
+  else P.index = 0;
+  uloz();
+  U.faze = 'konec'; U.hotovaEtapa = id; U.nahled = null; U.vyber = null; U.pr.zprava = null; U.pr.volby = null; U.pr.tlacitko = null; U.pr.nabidka = false;
+  kresliPlochu();
+  fokus(id === 'e6' || !dalsi ? 'a-zaver' : 'a-etapa-' + dalsi.id);
+}
+function vyssiOpora(o) { return o === 'sam' ? 'spolu' : 'ukazka'; }
+/* Když ani poslední nápověda nestačí: lehčí dvojče, nebo postup „s oporou“. Nikdo neuvízne. */
+function muzeLehci() {
+  var d = U.def, st = P.etapy[d.etapa], seznam = ulohyEtapy(d.etapa), brana = seznam[seznam.length - 1];
+  if (!(d.typ === 'res' || d.typ === 'zapis') || !brana.vzor || brana.typ !== d.typ) return false;
+  if (st.dvojcat >= KONF.maxDvojcat) return false;
+  return !(d.opora === 'ukazka' || (d.typ === 'zapis' && d.opora === 'spolu'));
+}
+function spustDvojce(vzorDef, opora) {
+  var g = M.generuj(vzorDef.vzor, M.sigUlohy(U.def));
+  if (!g) return null;
+  var d = {}, k;
+  for (k in vzorDef) if (Object.prototype.hasOwnProperty.call(vzorDef, k)) d[k] = vzorDef[k];
+  d.id = vzorDef.id + '-dvojce'; d.brana = false; d.opora = opora; d.sig = g.sig;
+  if (vzorDef.typ === 'zapis' && opora === 'ukazka') d.opora = 'spolu';
+  if (g.rovnice) { d.rovnice = g.rovnice; delete d.leva; delete d.prava; }
+  else {
+    d.leva = g.leva; d.prava = g.prava; d.x = g.x;
+    if (vzorDef.typ === 'zapis') d.rovnice = M.fmtRov(M.rovQ(M.rovVah({ L: M.rozbal(g.leva), R: M.rozbal(g.prava) })));
+  }
+  d.prvniKrok = d.typ === 'res' && d.opora === 'spolu' && !d.rozepis;
+  P.dvoj = d; uloz();
+  spustUlohu(d, true);
+  return d;
+}
+function dalsiUloha() {
+  var d = U.def, et = d.etapa, st = P.etapy[et], seznam = ulohyEtapy(et);
+  st.napoved = Math.max(st.napoved || 0, U.maxNapoved);
+  var stav = st.napoved > 0 ? 'otazky' : 'sam';
+  if (et === 'e2') {
+    var e = P.e2;
+    e.pocet++; e.serie = U.vysledek && U.vysledek.spravne ? e.serie + 1 : 0;
+    if (e.serie >= KONF.e2Serie) return etapaHotova('e2', stav);
+    if (e.pocet >= KONF.e2Max) return etapaHotova('e2', 'opora');
+    if (e.pocet < seznam.length) { P.index = e.pocet; P.dvoj = null; uloz(); return spustUlohu(seznam[e.pocet]); }
+    var g = M.generuj('ucinky', M.sigUlohy(d)), nd = {}, k;
+    for (k in seznam[0]) if (Object.prototype.hasOwnProperty.call(seznam[0], k)) nd[k] = seznam[0][k];
+    nd.id = 'e2-gen'; nd.leva = g.leva; nd.prava = g.prava; nd.sig = g.sig;
+    P.dvoj = nd; uloz();
+    return spustUlohu(nd);
+  }
+  if (U.dvojce || d.brana) {
+    var ciste = U.maxNapoved < 3, brana = seznam[seznam.length - 1];
+    if (!U.dvojce) {
+      if (ciste) return etapaHotova(et, stav);
+      st.dvojcat = 1; st.dv = (st.dv || 0) + 1;
+      if (!spustDvojce(d, vyssiOpora(d.opora))) etapaHotova(et, 'opora');
+      return;
+    }
+    if (st.dvojcat < KONF.maxDvojcat) {
+      st.dvojcat++; st.dv = (st.dv || 0) + 1;
+      if (!spustDvojce(brana, brana.opora)) etapaHotova(et, 'opora');   /* opora zase klesá */
+      return;
+    }
+    return etapaHotova(et, ciste ? 'otazky' : 'opora');
+  }
+  P.index = seznam.indexOf(d) + 1;
+  if (P.index >= seznam.length) return etapaHotova(et, stav);
+  uloz();
+  spustUlohu(seznam[P.index]);
+}
+
+/* ---------- stavění na vahách ---------- */
+function muzeStavet() {
+  if (!U || U.nahled || U.hotovo) return false;
+  var d = U.def;
+  if (d.zamceno || d.typ === 'zapis') return false;
+  return U.faze === 'prace';
+}
+function nelze() {
+  if (U && (U.faze === 'pis' || U.faze === 'rozepis')) hlasStav(T.vahy.nejdrivRadek);
+  else if (U && !U.nahled && !U.hotovo) hlasStav(T.vahy.nelze);
+}
+function poUprave() {
+  U.pusteno = false; U.vyber = null; U.duchove = null;
+  animuj(0); kresliOvladani(); hlasStav();
+  if (U.def.typ === 'volne') kresliZapisnik();
+}
+function poloz(s, p, t) {
+  if (M.naKoliku(U.vahy[s], p) >= KONF.maxNaKoliku) { hlasStav(T.vahy.plno); return; }
+  U.vahy[s].push({ p: p, t: t });
+  poUprave();
+}
+function presun(s, i, s2, p2) {
+  var z = U.vahy[s][i];
+  if (!z) return;
+  if (s === s2 && z.p === p2) { U.vyber = null; kresliVahyHl(); kresliOvladani(); return; }
+  if (M.naKoliku(U.vahy[s2], p2) >= KONF.maxNaKoliku) { hlasStav(T.vahy.plno); return; }
+  U.vahy[s].splice(i, 1);
+  U.vahy[s2].push({ p: p2, t: z.t });
+  poUprave();
+}
+function sundej(s, i) { if (U.vahy[s][i]) { U.vahy[s].splice(i, 1); poUprave(); } }
+function klikZavazi(s, i) {
+  if (!muzeStavet()) return nelze();
+  var v = U.vyber, z = U.vahy[s][i];
+  if (!z) return;
+  if (v && v.zdroj === 'zas') return poloz(s, z.p, v.t);
+  U.vyber = (v && v.zdroj === 'vahy' && v.s === s && v.i === i) ? null : { zdroj: 'vahy', s: s, i: i };
+  kresliVahyHl(); kresliOvladani();
+}
+function posledniNaKoliku(s, p) {
+  for (var i = U.vahy[s].length - 1; i >= 0; i--) if (U.vahy[s][i].p === p) return i;
+  return -1;
+}
+function klikKolik(s, p) {
+  if (!muzeStavet()) return nelze();
+  var v = U.vyber;
+  A.kolik = s + ':' + p;
+  if (!v) {
+    var i = posledniNaKoliku(s, p);
+    if (i >= 0) { U.vyber = { zdroj: 'vahy', s: s, i: i }; kresliVahyHl(); kresliOvladani(); }
+    return;
+  }
+  if (v.zdroj === 'zas') poloz(s, p, v.t); else presun(v.s, v.i, s, p);
+}
+function kolikNa(cx, cy) {
+  var svg = $('vahy'), r = svg.getBoundingClientRect();
+  if (cx < r.left || cx > r.right || cy < r.top || cy > r.bottom) return { mimo: true };
+  var m = svg.getScreenCTM();
+  if (!m) return null;
+  var pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy; pt = pt.matrixTransform(m.inverse());
+  var zap = !!U.zapor, g = geom(zap, U.vahy), dx = pt.x - G.stred, p = Math.round(Math.abs(dx) / G.roztec);
+  if (p < 1 || p > KONF.maxPozice || Math.abs(Math.abs(dx) - p * G.roztec) > G.roztec / 2) return null;
+  var zadni = zap && pt.y < g.by - G.mezera / 2;
+  return { s: dx < 0 ? 'L' : 'R', p: zadni ? -p : p };
+}
+
+/* ---------- pouštění vah ---------- */
+function cilSplnen() {
+  var c = U.def.cil, k = M.krok(M.rovVah(U.zaklad), M.rovVah(U.vahy));
+  if (c.pridej) {
+    return M.stejne(U.vahy.L, U.puvod.L.concat(M.rozbal(c.pridej.leva))) && M.stejne(U.vahy.R, U.puvod.R.concat(M.rozbal(c.pridej.prava)));
+  }
+  if (c.leva && !M.stejne(U.vahy.L, M.rozbal(c.leva))) return false;
+  if (c.stejne) {
+    if (k.typ !== 'plus') return false;
+    if (c.zmena === 'minus' && !(k.d.a < 0 || (k.d.a === 0 && k.d.b < 0))) return false;
+  }
+  return true;
+}
+function zmenaTypu() {
+  function pocty(st) { var o = { d: 0, t: 0, h: 0, L: 0 }; st.forEach(function (z) { o[z.t]++; }); return o; }
+  var zl = pocty(U.zaklad.L), zr = pocty(U.zaklad.R), nl = pocty(U.vahy.L), nr = pocty(U.vahy.R), nalez = null, shoda = true;
+  ['d', 't', 'h', 'L'].forEach(function (t) {
+    var a = nl[t] - zl[t], b = nr[t] - zr[t];
+    if (a !== b) shoda = false;
+    if (a !== 0 && !nalez) nalez = t;
+  });
+  return shoda ? nalez : null;
+}
+function chybaKroku(k) {
+  function nul(d) { return d.a === 0 && d.b === 0; }
+  if (nul(k.dl) !== nul(k.dr)) { nezdar('jedna'); return rekni(T.pr.jednaStrana); }
+  var tz = zmenaTypu();
+  if (tz) {
+    nezdar('jinde');
+    return rekni(tz === 'L' ? dopln(T.pr.stejneJinde, { T: 'L' }).replace('stejný', 'stejné') : dopln(T.pr.stejneJinde, { T: T.Nazvy[tz] }));
+  }
+  nezdar('ruzne');
+  rekni(T.pr.ruzne);
+}
+/* Po puštění zapíše do Zápisníku, co na vahách viselo. */
+function zapisPokus() {
+  var n = M.naklon(U.vahy, U.x), txt = M.fmtSurovy(U.vahy.L) + (n === 0 ? ' = ' : ' ≠ ') + M.fmtSurovy(U.vahy.R);
+  if (!U.radky.length || U.radky[U.radky.length - 1].txt !== txt) U.radky.push({ txt: txt });
+  if (U.radky.length > 6) U.radky.shift();
+  kresliZapisnik();
+}
+function pustPokus() {
+  var d = U.def, a = null, b = null;
+  if (d.ucinky) {
+    a = M.ctiCislo(U.vstupy.ul || ''); b = M.ctiCislo(U.vstupy.up || '');
+    if (!a || !b) { U.pozn = T.pozn.ucinky; kresliUkol(); fokus(a ? 'v-up' : 'v-ul'); return; }
+  }
+  if (d.tip !== false && U.tip == null) { rekni(T.pr.nejdrivTip); return; }
+  U.pozn = null;
+  var nak = M.naklon(U.vahy, U.x);
+  U.pusteno = true; U.vyber = null;
+  if (d.cil && !cilSplnen()) {
+    var k = M.krok(M.rovVah(U.zaklad), M.rovVah(U.vahy));
+    if (d.cil.stejne && k.typ === 'ruzne') chybaKroku(k); else { nezdar('cil', false); rekni(d.nesplneno); }
+  } else {
+    U.hotovo = true;
+    U.vysledek = { nak: nak, spravne: d.tip === false ? true : U.tip === nak + 1 };
+    if (d.tip !== false) zaznam(function (st) { st.tip[1]++; if (U.vysledek.spravne) st.tip[0]++; });
+    if (d.ucinky) {
+      U.ukazUcinky = true;
+      var l = M.ucinek(U.vahy.L, U.x), r = M.ucinek(U.vahy.R, U.x);
+      var soucet = function (st) { var s = 0; st.forEach(function (z) { s += z.p + KONF.hmotnosti[z.t]; }); return s; };
+      if (a.n === l && b.n === r && a.d === 1 && b.d === 1) mlc();
+      else if ((a.n !== l && a.n === soucet(U.vahy.L)) || (b.n !== r && b.n === soucet(U.vahy.R))) {
+        zaznamChyby('soucet');
+        rekni(T.pr.soucet, { tlacitko: { text: 'Vyzkoušet na volných vahách', akce: 'pokusVolne', p: 'soucet' } });
+      } else { zaznamChyby('ucinky'); rekni(T.pr.ucinkyJinak); }
+    } else if (d.poHotovo) rekni(d.poHotovo);
+    else mlc();
+  }
+  zapisPokus();
+  animuj(cilUhlu());
+  kresliOvladani(); kresliUkol(); hlasStav();
+  if (U.hotovo) fokus('a-dal');
+}
+function potvrdKrok(k) {
+  var posl = U.radky[U.radky.length - 1];
+  posl.upr = M.fmtKrok(k);
+  U.zaklad = M.kopie(U.vahy); U.uroven = 0; U.urovenF = 0; U.pokusy = {};
+  if (U.def.pis) {
+    U.faze = 'pis'; U.vstupy.radek = '';
+    kresliZapisnik(); fokus('v-radek');
+    if (U.def.opora === 'spolu') rekni(T.pr.pis); else mlc();
+  } else {
+    U.radky.push({ rov: M.rovQ(M.rovVah(U.vahy)) });
+    poKroku();
+  }
+}
+function poKroku() {
+  kresliZapisnik();
+  var typ = U.def.typ === 'zapis' ? 'zapis' : 'res', s = M.situace(aktRov());
+  if (s.typ === 'bezx' && U.def.bezX) return rekni(U.def.bezX);
+  if (U.def.opora === 'spolu' && !U.hotovo) rekni(dopln(T.nap[typ][2][s.typ], { a: M.fmtCislo(s.a || 0), c: M.fmtCislo(s.c || 0) }));
+  else mlc();
+}
+function pustRes() {
+  var k = M.krok(M.rovVah(U.zaklad), M.rovVah(U.vahy)), nak = M.naklon(U.vahy, U.x);
+  U.pusteno = true; U.vyber = null;
+  if (k.typ === 'nic') U.zaklad = M.kopie(U.vahy);
+  else if (k.typ === 'ruzne') {
+    if (nak === 0) { nezdar('nahoda'); rekni(T.pr.nahoda); } else chybaKroku(k);
+  } else potvrdKrok(k);
+  animuj(cilUhlu());
+  kresliOvladani(); kresliUkol(); hlasStav();
+}
+
+/* ---------- kroky, které dělá aplikace (ukázka, první krok) ---------- */
+function krokAplikace(dz, potom) {
+  var z = !!U.zapor, nl = M.aplikuj(U.vahy.L, dz.a, dz.b, z), nr = M.aplikuj(U.vahy.R, dz.a, dz.b, z), k = KONF.krokUkazky;
+  if (!nl || !nr) { U.faze = 'prace'; kresliPlochu(); return; }
+  U.pusteno = false; U.duchove = { L: [], R: [] }; U.skryjPocitadlo = U.def.opora === 'ukazka'; A.uhel = 0;
+  kresliPlochu();
+  naplanuj(function () {
+    U.duchove.L = ubylo(U.vahy.L, nl); U.vahy.L = nl; kresliVahyHl(); kresliOvladani();
+    naplanuj(function () {
+      U.duchove.R = ubylo(U.vahy.R, nr); U.vahy.R = nr; kresliVahyHl(); kresliOvladani();
+      naplanuj(function () { U.pusteno = true; animuj(cilUhlu()); kresliOvladani(); hlasStav(); potom(); }, k);
+    }, k);
+  }, k);
+}
+function krokZeSituace(s) {
+  if (s.typ === 'obe') return { a: -s.k, b: 0 };
+  if (s.typ === 'konst' || s.typ === 'konstZap') return { a: 0, b: -s.c };
+  return null;
+}
+function ukazkaKrok() {
+  var dz = krokZeSituace(M.situace(M.rovVah(U.zaklad)));
+  if (!dz) {
+    U.faze = 'prace'; U.duchove = null; U.skryjPocitadlo = false; U.otazka = null;
+    kresliPlochu(); rekni(T.pr.samo); fokus('v-odp');
+    return;
+  }
+  krokAplikace(dz, function () {
+    var spr, v;
+    if (dz.a !== 0) { spr = clenTxt(dz.a); v = [spr, String(Math.abs(dz.a)), clenTxt(Math.abs(dz.a) + 1)]; }
+    else { spr = String(Math.abs(dz.b)); v = [spr, 'x', String(Math.abs(dz.b) + 1)]; }
+    v = otoc(jedinecne(v), U.radky.length);
+    U.otazka = { text: (dz.a > 0 || dz.b > 0) ? 'Co na obou stranách přibylo?' : T.pr.ukazkaOtazka, volby: v, spravne: v.indexOf(spr), dz: dz, chyb: 0 };
+    kresliUkol(); fokus('a-ukazkaVolba-0');
+  });
+}
+function prvniKrok() {
+  var dz = krokZeSituace(M.situace(M.rovVah(U.zaklad)));
+  if (!dz) { U.faze = 'prace'; kresliPlochu(); return rekni(T.nap.res[1]); }
+  krokAplikace(dz, function () {
+    U.radky[U.radky.length - 1].upr = M.fmtZmena(M.vyrazQ(dz));
+    U.zaklad = M.kopie(U.vahy);
+    U.radky.push({ rov: M.rovQ(M.rovVah(U.vahy)) });
+    U.faze = 'prace';
+    kresliPlochu();
+    rekni(T.pr.prvniKrok);
+  });
+}
+
+/* ---------- zkouška a psané řádky ---------- */
+function slovyDisky(a) { return ({ 1: 'jeden disk', 2: 'dva disky', 3: 'tři disky', 4: 'čtyři disky', 5: 'pět disků' })[a] || (a + ' disků'); }
+function vyresenoNaVahach(n) {
+  var nh = U.nahled, posl = U.radky[U.radky.length - 1], s = M.situace(M.rovVah(U.zaklad));
+  U.hotovo = true; nh.typ = 'hotovo'; nh.popis = 'Zkouška: původní váhy, L váží ' + n;
+  if (posl.txt || !M.vyreseno(posl.rov)) {
+    if (s.typ === 'nasob' && !posl.upr) posl.upr = ': ' + s.a;
+    U.radky.push({ txt: 'x = ' + n, rov: { l: { a: Q(1), b: Q(0) }, r: { a: Q(0), b: Q(n) } } });
+  }
+  U.radky.push({ txt: 'Zkouška: L váží ' + n + ' ; vlevo ' + M.ucinek(nh.vahy.L, n) + ' ; vpravo ' + M.ucinek(nh.vahy.R, n), trida: 'zk' });
+  kresliZapisnik(); mlc();
+}
+function chybaRadku(r, ocek, pred) {
+  nezdar('radek', false);
+  var d = U.def, sp = M.situace(M.rovCisla(pred)), i, strany = ['l', 'r'];
+  if (sp.typ === 'nasob' && M.vyreseno(r)) {
+    var hod = Q.cislo(Q.nula(r.l.a) ? r.l.b : r.r.b);
+    if (hod === sp.c - sp.a && sp.a >= 2 && sp.a <= 5) {
+      zaznamChyby('dvax');
+      return rekni(dopln(T.pr.dvaXplus, { a: sp.a, disky: slovyDisky(sp.a) }), { tlacitko: { text: 'Vyzkoušet na volných vahách', akce: 'pokusVolne', p: 'dvax' + sp.a } });
+    }
+  }
+  function slouceno(o, m) {
+    if (Q.nula(o.a) || Q.nula(o.b)) return false;
+    var souc = Q.plus(o.a, o.b), nas = Q.krat(o.a, o.b);
+    return (Q.nula(m.b) && (Q.rovno(m.a, souc) || Q.rovno(m.a, nas))) || (Q.nula(m.a) && Q.rovno(m.b, souc));
+  }
+  for (i = 0; i < 2; i++) {
+    if (slouceno(pred[strany[i]], r[strany[i]]) || (ocek && slouceno(ocek[strany[i]], r[strany[i]]))) { zaznamChyby('slouceni'); return rekni(T.pr.slouceni); }
+  }
+  if (ocek) {
+    for (i = 0; i < 2; i++) {
+      var o = ocek[strany[i]], m = r[strany[i]];
+      if (!Q.nula(o.a) && !Q.nula(o.b)) {
+        if (Q.rovno(m.a, o.a) && Q.rovno(m.b, Q.neg(o.b))) {
+          var zap = U.puvod[i === 0 ? 'L' : 'R'].filter(function (z) { return z.p < 0; })[0];
+          zaznamChyby('znamenko');
+          return rekni(d.typ === 'res' && zap ? dopln(T.pr.znamenko, { p: -zap.p }) : T.pr.znamenkoZapis);
+        }
+      }
+    }
+    var lOk = M.stejnyVyraz(r.l, ocek.l), rOk = M.stejnyVyraz(r.r, ocek.r), lSt = M.stejnyVyraz(r.l, pred.l), rSt = M.stejnyVyraz(r.r, pred.r);
+    if ((lOk && rSt && !rOk) || (rOk && lSt && !lOk)) { zaznamChyby('jedna'); return rekni(T.pr.jenJedna); }
+  }
+  zaznamChyby('radek');
+  if ((d.typ === 'res' || d.leva) && M.jeCela(r)) {
+    var zp = !!U.zapor, L = M.rozmisti(r.l.a.n, r.l.b.n, zp), R = M.rozmisti(r.r.a.n, r.r.b.n, zp);
+    if (L && R) {
+      U.nahled = { typ: 'radek', vahy: { L: L, R: R }, x: d.x, zapor: zp, pusteno: false, popis: 'Váhy podle tvého řádku' };
+      A.uhel = 0; kresliPlochu();
+      return rekni(T.pr.radekVahy);
+    }
+  }
+  rekni(T.pr.radekPorovnej);
+}
+function obnovNahledRadku() {
+  var d = U.def, r = U.radky[U.radky.length - 1].rov, L = null, R = null;
+  if (U.radky.length === 1 && d.leva) { L = M.rozbal(d.leva); R = M.rozbal(d.prava); }
+  else if (M.jeCela(r)) { L = M.rozmisti(r.l.a.n, r.l.b.n, false); R = M.rozmisti(r.r.a.n, r.r.b.n, false); }
+  if (L && R) { U.nahled = { typ: 'ukaz', vahy: { L: L, R: R }, x: d.x, pusteno: false, popis: 'Váhy podle posledního řádku' }; U.pozn = null; }
+  else { U.nahled = null; U.ukazVahy = false; U.pozn = T.pozn.nevejde; }
+}
+
+/* ---------- volné váhy ---------- */
+function spustVolne(predloha) {
+  var def = { id: 'volne', etapa: null, typ: 'volne', opora: 'sam', zasobnik: ['d', 't', 'h', 'L'], text: 'Stav, co chceš. Pusť váhy a sleduj, co udělají.' };
+  U = novyBeh(def);
+  U.volby = { ucinky: true, zapis: false, zapor: false }; U.x = 4; U.ukazUcinky = true;
+  if (predloha) {
+    U.vahy = { L: M.rozbal(predloha.leva), R: M.rozbal(predloha.prava) };
+    U.x = predloha.x || 4; U.zapor = !!predloha.zapor; U.volby.zapor = U.zapor;
+    if (predloha.text) def.text = predloha.text;
+  }
+  A.uhel = 0; A.kolik = 'L:1';
+  ukaz('plocha'); kresliPlochu();
+}
+function zpetZVolnych() {
+  var o = A.odlozena;
+  A.odlozena = null;
+  if (o && o.U) {
+    U = o.U; A.uhel = cilUhlu();
+    ukaz('plocha'); kresliPlochu();
+    if (U.plan) naplanuj(U.plan, 500);
+  } else { U = null; ukaz(o ? o.pohled : 'uvod'); }
+}
+
+/* =====================================================================
+   AKCE: všechno, co spouští tlačítka
+   ===================================================================== */
+var AKCE = {
+  zacit: function () { P = novyPostup(); spustEtapu('e1'); },
+  znovuVse: function () { Uloziste.smaz(); P = novyPostup(); spustEtapu('e1'); },
+  pokracovat: function () { P.zacato = true; pokracuj(); },
+  etapa: function (id) { if (odemceno(id)) { A.odlozena = null; spustEtapu(id); } },
+  zaver: function () { A.odlozena = null; U = null; ukaz('zaver'); fokus('v-zaver'); },
+  oaplikaci: function () { if (A.pohled !== 'oapl') { A.zOapl = A.pohled; ukaz('oapl'); } },
+  export: function () {
+    if (A.pohled === 'export') return AKCE.zpetZExportu();
+    ulozKdyzTreba();
+    A.zExp = A.pohled === 'oapl' ? 'zaver' : A.pohled;
+    A.exp.pozn = null; A.exp.hotovo = false;
+    ukaz('export'); fokus('v-jmeno');
+  },
+  zpetZExportu: function () {
+    var kam = A.zExp || 'zaver';
+    if (kam === 'plocha' && !U) kam = 'zaver';
+    ukaz(kam);
+    if (kam === 'plocha') kresliPlochu();
+  },
+  znamka: function (n) { A.exp.znamka = +n; A.exp.pozn = null; kresliExport(); },
+  vytvorPdf: function () {
+    var e = A.exp, jmeno = (e.jmeno || '').replace(/\s+/g, ' ').trim();
+    e.hotovo = false;
+    if (jmeno.length < 2) { e.pozn = T.exp.chybiJmeno; kresliExport(); return fokus('v-jmeno'); }
+    if (!e.znamka) { e.pozn = T.exp.chybiZnamka; kresliExport(); return; }
+    try {
+      var stranky = nakresliZaznam(jmeno, e.znamka, new Date());
+      var pdf = M.sestavPdf(stranky.map(function (c) { return { w: c.width, h: c.height, bajty: jpegBajty(c) }; }));
+      if (e.url) { try { window.URL.revokeObjectURL(e.url); } catch (er) { /* nic */ } }
+      e.url = window.URL.createObjectURL(new window.Blob([pdf], { type: 'application/pdf' }));
+      e.nazev = M.nazevSouboru(jmeno); e.hotovo = true; e.pozn = null;
+      kresliExport();
+      var a = $('pdfOdkaz');
+      if (a) a.click();
+    } catch (er) { e.pozn = T.exp.nejde; kresliExport(); }
+  },
+  zpetZOAplikaci: function () { ukaz(A.zOapl === 'plocha' && !U ? 'uvod' : (A.zOapl || 'uvod')); if (A.pohled === 'plocha') kresliPlochu(); },
+  volne: function () {
+    if (A.pohled === 'plocha' && U && U.def.typ === 'volne') return zpetZVolnych();
+    A.odlozena = { U: A.pohled === 'plocha' ? U : null, pohled: A.pohled === 'oapl' ? 'uvod' : A.pohled };
+    spustVolne(null);
+  },
+  pokusVolne: function (p) {
+    var pred;
+    if (p === 'soucet') pred = { leva: [{ p: 4, t: 'd' }], prava: [], x: 1, text: 'Vlevo visí disk na pozici 4. Kolik disků na pozici 1 ho vyváží? Zkoušej a pouštěj váhy.' };
+    else {
+      var a = parseInt(String(p).replace('dvax', ''), 10) || 2, pr = [{ p: 1, t: 'L' }];
+      for (var i = 0; i < a; i++) pr.push({ p: 1, t: 'd' });
+      pred = { leva: [{ p: a, t: 'L' }], prava: pr, x: 3, text: 'Vlevo visí L na pozici ' + a + '. Vpravo jedno L a ' + slovyDisky(a) + ' na pozici 1. Pusť váhy.' };
+    }
+    A.odlozena = { U: U, pohled: 'plocha' };
+    spustVolne(pred);
+  },
+  dal: function () { if (U && U.hotovo) dalsiUloha(); },
+  tip: function (i) { if (U.hotovo) return; U.tip = +i; kresliUkol(); },
+  drz: function () {
+    if (U.nahled) U.nahled.pusteno = false; else U.pusteno = false;
+    animuj(0); kresliOvladani(); hlasStav();
+    if (U.def.typ === 'volne') kresliZapisnik();
+  },
+  pust: function () {
+    if (U.nahled) { U.nahled.pusteno = true; animuj(cilUhlu()); kresliOvladani(); hlasStav(); return; }
+    var typ = U.def.typ;
+    if (typ === 'pokus' && !U.hotovo) return pustPokus();
+    if ((typ === 'res' || typ === 'zvlastni') && U.faze === 'prace' && !U.hotovo) return pustRes();
+    U.pusteno = true; U.vyber = null;
+    animuj(cilUhlu()); kresliOvladani(); hlasStav();
+    if (typ === 'volne') kresliZapisnik();
+    if (typ === 'veta' || typ === 'pokus') zapisPokus();
+  },
+  sundat: function () { var v = U.vyber; if (v && v.zdroj === 'vahy' && muzeStavet()) sundej(v.s, v.i); },
+  vrat: function () { if (!muzeStavet()) return nelze(); U.vahy = M.kopie(U.zaklad); poUprave(); },
+  znovu: function () { var m = U.maxNapoved, d = U.def, dv = U.dvojce; spustUlohu(d, dv); U.maxNapoved = m; },
+  zpet: function () {
+    var n = U.nahled;
+    if (!n) return;
+    U.nahled = null;
+    if (U.def.typ === 'zapis' && U.ukazVahy) obnovNahledRadku();
+    A.uhel = cilUhlu();
+    kresliPlochu();
+    if (n.typ === 'ukazka') rekni(U.def.typ === 'zapis' ? T.pr.poUkazceZapis : T.pr.poUkazce);
+    if (U.faze === 'pis' || U.faze === 'rozepis' || U.faze === 'radek') fokus('v-radek');
+  },
+  nevim: function () {
+    if (!U || U.def.typ === 'volne' || U.faze === 'konec' || U.hotovo) return;
+    var d = U.def, faz = fazeNapovedy(), pole;
+    U.pr.nabidka = false;
+    if (faz) {
+      pole = T.nap.faze[faz];
+      U.urovenF = Math.min(pole.length, U.urovenF + 1); zapocti(Math.min(U.urovenF, 2)); zaznamOtazky(Math.min(U.urovenF, 2));
+      if (U.urovenF >= pole.length && faz !== 'ukazka') U.unik = true;
+      return rekni(pole[U.urovenF - 1]);
+    }
+    if (d.typ === 'res' || d.typ === 'zapis') {
+      U.uroven = Math.min(4, U.uroven + 1); zapocti(U.uroven); zaznamOtazky(U.uroven);
+      if (U.uroven >= 4) U.unik = true;
+      return napovedReseni(U.uroven);
+    }
+    pole = d.napovedy || T.nap.obecne;
+    U.uroven = Math.min(pole.length, U.uroven + 1); zapocti(Math.min(U.uroven, 2)); zaznamOtazky(Math.min(U.uroven, 2));
+    if (U.uroven >= pole.length && d.typ === 'pokus' && d.cil) U.unik = true;
+    rekni(pole[U.uroven - 1]);
+  },
+  unik: function () {
+    if (!U || !U.unik || U.hotovo) return;
+    var d = U.def, et = d.etapa, st = P.etapy[et], seznam = ulohyEtapy(et), brana = seznam[seznam.length - 1], i = seznam.indexOf(d);
+    st.napoved = Math.max(st.napoved || 0, U.maxNapoved, 2);
+    if (muzeLehci()) { st.dvojcat++; st.dv = (st.dv || 0) + 1; if (spustDvojce(brana, vyssiOpora(d.opora))) return; }
+    if (U.dvojce || d.brana || i < 0 || i === seznam.length - 1) return etapaHotova(et, 'opora');
+    P.index = i + 1; P.dvoj = null; uloz();
+    spustUlohu(seznam[P.index]);
+  },
+  volba: function () {
+    var s = M.situace(aktRov());
+    rekni(U.def.typ === 'zapis' ? T.pr.zkusVolbuZapis : (s.typ === 'nasob' ? T.pr.zkusOdpoved : T.pr.zkusVolbu));
+  },
+  moznost: function (i) {
+    var d = U.def;
+    i = +i;
+    if (U.hotovo) return;
+    U.volba = i;
+    if (i !== d.spravne) { U.volbaOk = false; nezdar('veta'); kresliUkol(); return rekni(d.poSpatne); }
+    if (d.typ === 'veta') { U.hotovo = true; mlc(); kresliPlochu(); fokus('a-dal'); }
+    else { U.volbaOk = true; mlc(); kresliUkol(); fokus('v-slova'); }
+  },
+  slovaHotovo: function () {
+    var t = (U.vstupy.slova || '').trim();
+    if (t.length < 3) { U.pozn = T.pozn.text; return kresliUkol(); }
+    P.texty[U.def.id] = t; uloz();
+    U.pozn = null; U.hotovo = true;
+    kresliPlochu(); fokus('a-dal');
+  },
+  xPlus: function () { zmenX(1); },
+  xMinus: function () { zmenX(-1); },
+  vyprazdnit: function () { U.vahy = { L: [], R: [] }; poUprave(); },
+  ukazkaVolba: function (i) {
+    var o = U.otazka;
+    if (!o) return;
+    if (+i === o.spravne) {
+      U.otazka = null; U.duchove = null; U.skryjPocitadlo = false;
+      U.radky[U.radky.length - 1].upr = M.fmtZmena(M.vyrazQ(o.dz));
+      U.zaklad = M.kopie(U.vahy);
+      U.radky.push({ rov: M.rovQ(M.rovVah(U.vahy)) });
+      U.pr.zprava = null; U.pr.nabidka = false; U.urovenF = 0;
+      kresliPlochu();
+      naplanuj(ukazkaKrok, 1100);
+    } else {
+      o.chyb++; zaznamChyby('ukazka');
+      if (o.chyb >= 2) { U.skryjPocitadlo = false; kresliOvladani(); rekni(T.pr.ukazka2); } else rekni(T.pr.ukazka1);
+    }
+  },
+  zkouska: function () {
+    if (!U || U.def.typ !== 'res' || U.hotovo || U.nahled) return;
+    var q = M.ctiCislo(U.vstupy.odp || '');
+    if (!q || q.d !== 1 || q.n < 0 || q.n > 99) { U.pozn = T.pozn.cislo; kresliUkol(); return fokus('v-odp'); }
+    U.pozn = null;
+    var n = q.n, nh = { typ: 'zkouska', vahy: M.kopie(U.puvod), x: n, cisloL: n, zapor: !!U.zapor, pusteno: false, popis: 'Zkouška: původní váhy, L váží ' + n };
+    U.nahled = nh; A.uhel = 0;
+    kresliPlochu();
+    var u0 = U;
+    setTimeout(function () {
+      if (U !== u0 || U.nahled !== nh) return;
+      nh.pusteno = true;
+      var nak = M.naklon(nh.vahy, n), s = M.situace(M.rovVah(U.zaklad));
+      if (nak === 0) vyresenoNaVahach(n);
+      else {
+        var dvax = s.typ === 'nasob' && n === s.c - s.a && s.a >= 2 && s.a <= 5;
+        nezdar('vysledek', dvax ? 'dvax' : 'vysledek');
+        if (dvax) {
+          rekni(dopln(T.pr.dvaXplus, { a: s.a, disky: slovyDisky(s.a) }), { tlacitko: { text: 'Vyzkoušet na volných vahách', akce: 'pokusVolne', p: 'dvax' + s.a } });
+        } else rekni(T.pr.spatnyVysledek);
+      }
+      animuj(cilUhlu());
+      kresliOvladani(); kresliUkol(); hlasStav();
+      fokus(nak === 0 ? 'a-dal' : 'a-zpet');
+    }, REDUK ? 50 : 700);
+  },
+  zapsat: function () {
+    var d = U.def;
+    if (!(U.faze === 'pis' || U.faze === 'rozepis' || U.faze === 'radek')) return;
+    var txt = (U.vstupy.radek || '').trim(), pred = U.radky[U.radky.length - 1], upr = null, uprTxt = '';
+    U.poznZ = null;
+    if (U.faze === 'radek') {
+      uprTxt = (U.vstupy.upr || '').trim();
+      if (uprTxt) { upr = M.ctiUpravu(uprTxt); if (!upr) { U.poznZ = T.pozn.upravaChyba; kresliZapisnik(); return fokus('v-upr'); } }
+      else if (d.upravaPovinna) { U.poznZ = T.pozn.uprava; kresliZapisnik(); return fokus('v-upr'); }
+    }
+    var r = M.ctiRovnici(txt);
+    if (!r) { U.poznZ = T.pozn.nerozumim; kresliZapisnik(); return fokus('v-radek'); }
+    if (U.faze === 'rozepis' && /[()]/.test(txt)) { U.poznZ = T.pozn.bezZavorky; kresliZapisnik(); return fokus('v-radek'); }
+    var ocek = U.faze === 'radek' ? (upr ? M.pouzij(upr, pred.rov) : pred.rov) : M.rovQ(M.rovVah(U.zaklad));
+    if (!M.ekviv(r, pred.rov)) { kresliZapisnik(); return chybaRadku(r, ocek, pred.rov); }
+    if (upr) pred.upr = M.hezky(uprTxt);
+    U.radky.push({ txt: M.hezky(txt), rov: r });
+    U.vstupy.radek = ''; U.vstupy.upr = ''; U.uroven = 0; U.urovenF = 0; U.pokusy = {};
+    if (d.typ === 'zapis') {
+      if (M.vyreseno(r)) { U.faze = 'dosazeni'; U.resX = M.reseni(r); U.ukazVahy = false; U.nahled = null; }
+      else if (U.ukazVahy) obnovNahledRadku();
+    } else U.faze = 'prace';
+    A.uhel = 0;
+    kresliPlochu();
+    if (U.faze === 'dosazeni') { mlc(); fokus('v-lv'); } else { poKroku(); if (d.typ === 'zapis') fokus('v-upr'); }
+  },
+  overit: function () {
+    if (U.faze !== 'dosazeni') return;
+    var r0 = U.radky[0].rov, x = U.resX, l = M.ctiCislo(U.vstupy.lv || ''), p = M.ctiCislo(U.vstupy.pv || '');
+    if (!l || !p) { U.pozn = T.pozn.cislo; kresliUkol(); return fokus(l ? 'v-pv' : 'v-lv'); }
+    var L = M.hodnota(r0.l, x), R = M.hodnota(r0.r, x);
+    U.pozn = null;
+    if (Q.rovno(l, L) && Q.rovno(p, R)) {
+      U.hotovo = true; U.faze = 'hotovo';
+      U.radky.push({ txt: 'Zkouška: x = ' + M.fmtQ(x) + ' ; vlevo ' + M.fmtQ(L) + ' ; vpravo ' + M.fmtQ(R), trida: 'zk' });
+      mlc(); kresliPlochu(); fokus('a-dal');
+    } else { nezdar('dosazeni'); kresliUkol(); rekni(T.pr.dosazeni); }
+  },
+  ukazVahy: function () {
+    if (U.def.typ !== 'zapis') return;
+    U.ukazVahy = !U.ukazVahy; U.pozn = null;
+    if (U.ukazVahy) { zapocti(2); zaznam(function (st) { st.vahy++; }); obnovNahledRadku(); } else U.nahled = null;
+    A.uhel = 0;
+    kresliPlochu();
+  },
+  reseni: function () { A.reseni = !A.reseni; kresliUkol(); kresliZapisnik(); },
+  preskoc: function () {
+    var d = U.def, seznam = ulohyEtapy(d.etapa), i = seznam.indexOf(d), dalsi = ETAPY[indexEtapy(d.etapa) + 1];
+    P.dvoj = null;
+    if (i >= 0 && i + 1 < seznam.length) { P.index = i + 1; uloz(); spustUlohu(seznam[i + 1]); }
+    else if (dalsi) spustEtapu(dalsi.id);
+    else AKCE.zaver();
+  },
+  smazat: function () {
+    if (!A.smazat) { A.smazat = true; return kresliUkol(); }
+    Uloziste.smaz(); P = novyPostup(); U = null; A.smazat = false;
+    ukaz('uvod');
+  }
+};
+function zmenX(o) {
+  U.x = Math.max(1, Math.min(9, U.x + o));
+  var el = $('hodnotaX');
+  if (el) el.textContent = U.x;
+  animuj(cilUhlu()); hlasStav();
+  if (U.def.typ === 'volne') kresliZapisnik();
+}
+
+/* =====================================================================
+   EXPORT: záznam práce jako PDF. Stránka A4 se kreslí na plátno v tiskovém stylu.
+   ===================================================================== */
+var PIS = '"Carlito","Calibri","DejaVu Sans",system-ui,sans-serif', MONO = '"DejaVu Sans Mono","Consolas",ui-monospace,monospace';
+A.exp = { jmeno: '', znamka: null, hotovo: false, url: null, nazev: '', pozn: null };
+
+function kresliExport() {
+  obnov(function () {
+    var e = A.exp, h = '<div class="obal"><h2>Export pro učitele</h2><p>' + T.exp.uvod + '</p>';
+    h += '<div class="box"><label for="v-jmeno"><strong>' + T.exp.jmeno + '</strong></label>' +
+      '<input type="text" id="v-jmeno" data-exp="jmeno" data-enter="vytvorPdf" autocomplete="name" maxlength="60" value="' + esc(e.jmeno) + '">' +
+      '<p class="poznamka">' + T.exp.soukromi + '</p></div>';
+    h += '<div class="box"><p id="skalaPopis"><strong>' + T.exp.skala + '</strong> ' + T.exp.skalaPopis + '</p><div class="skala" role="group" aria-labelledby="skalaPopis">';
+    for (var i = 1; i <= 10; i++) h += tl(String(i), 'znamka', { p: i, press: e.znamka === i });
+    h += '</div></div>';
+    if (e.pozn) h += '<p class="poznamka" role="status">' + e.pozn + '</p>';
+    h += '<div class="rada">' + tl('Vytvořit PDF', 'vytvorPdf', { c: 'hlavni' }) + tl('Zpět', 'zpetZExportu') + '</div>';
+    if (e.hotovo) {
+      h += '<div class="box" role="status"><p>' + T.exp.hotovo + ' <strong>' + esc(e.nazev) + '</strong>. ' + T.exp.nahraj + '</p>' +
+        '<div class="rada" style="margin-top:8px"><a class="tl" id="pdfOdkaz" href="' + e.url + '" download="' + esc(e.nazev) + '">Stáhnout znovu</a></div></div>';
+    }
+    $('export').innerHTML = h + '</div>';
+  });
+}
+function jpegBajty(platno) {
+  var d = platno.toDataURL('image/jpeg', 0.92), b = window.atob(d.slice(d.indexOf(',') + 1)), a = new Uint8Array(b.length);
+  for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+function casTxt(ms) { var m = Math.round(ms / 60000); return ms <= 0 ? '–' : (m < 1 ? 'do 1 min' : m + ' min'); }
+function slovemEtapy(pole) { return (pole.length === 1 ? 'etapa ' : 'etapy ') + pole.join(' ; '); }
+/* Co se o práci ví: po etapách a dohromady. */
+function souhrn() {
+  var S = { radky: [], hotovo: 0, jadro: 0, cas: 0, tipOk: 0, tipVse: 0, sam: [], otazky: [], opora: [], chyby: [], nejOt: null }, ch = {};
+  ETAPY.forEach(function (e, i) {
+    var st = P.etapy[e.id], pocetOt = 0, nej = 0, pocetCh = 0;
+    st.ot.forEach(function (n, j) { pocetOt += n; if (n) nej = j + 1; });
+    Object.keys(st.ch).forEach(function (k) {
+      pocetCh += st.ch[k];
+      if (!ch[k]) ch[k] = { k: k, n: 0, et: [] };
+      ch[k].n += st.ch[k]; ch[k].et.push(i + 1);
+    });
+    var zacato = st.hotovo || st.cas > 0 || pocetOt > 0 || pocetCh > 0 || (P.zacato && P.etapa === e.id);
+    var stav = st.hotovo ? (st.stav || 'otazky') : (zacato ? 'rozprac' : 'nezac');
+    if (st.hotovo) { S.hotovo++; if (!e.rozsireni) S.jadro++; S[stav].push(i + 1); }
+    S.cas += st.cas; S.tipOk += st.tip[0]; S.tipVse += st.tip[1];
+    if (pocetOt && (!S.nejOt || pocetOt > S.nejOt.n)) S.nejOt = { n: pocetOt, et: i + 1 };
+    S.radky.push({ n: i + 1, nazev: e.nazev + (e.rozsireni ? ' (rozšíření)' : ''), stav: stav, cas: st.cas, ot: pocetOt, nej: nej, dv: st.dv || 0, ch: pocetCh });
+  });
+  S.chyby = Object.keys(ch).map(function (k) { return ch[k]; }).sort(function (a, b) { return b.n - a.n; });
+  return S;
+}
+function nakresliZaznam(jmeno, znamka, kdy) {
+  var S = souhrn(), B = KONF.barvy, k = 2, W = 794, H = 1123, ml = 49, mt = 53, mb = 45, sw = W - 2 * ml, stranky = [], g = null, y = 0;
+  function nova() {
+    var c = document.createElement('canvas');
+    c.width = W * k; c.height = H * k;
+    g = c.getContext('2d'); g.scale(k, k);
+    g.fillStyle = B.p; g.fillRect(0, 0, W, H);
+    g.textBaseline = 'alphabetic';
+    stranky.push(c); y = mt;
+  }
+  function misto(h) { if (y + h > H - mb) nova(); }
+  function pismo(px, o) {
+    o = o || {};
+    g.font = (o.kurziva ? 'italic ' : '') + (o.tucne ? '700 ' : '400 ') + px + 'px ' + (o.mono ? MONO : PIS);
+    g.fillStyle = o.barva || B.t;
+  }
+  function verz(text, x, yy, px, barva, mez) {
+    pismo(px, { mono: true, barva: barva });
+    text = String(text).toUpperCase();
+    for (var i = 0; i < text.length; i++) { g.fillText(text.charAt(i), x, yy); x += g.measureText(text.charAt(i)).width + px * (mez == null ? 0.12 : mez); }
+    return x;
+  }
+  function zalom(text, sirka) {
+    var radky = [], r = '';
+    String(text).split(/\s+/).forEach(function (s) {
+      while (g.measureText(s).width > sirka && s.length > 1) {          /* slovo delší než řádek */
+        var n = s.length;
+        while (n > 1 && g.measureText(s.slice(0, n)).width > sirka) n--;
+        if (r) { radky.push(r); r = ''; }
+        radky.push(s.slice(0, n)); s = s.slice(n);
+      }
+      var zk = r ? r + ' ' + s : s;
+      if (r && g.measureText(zk).width > sirka) { radky.push(r); r = s; } else r = zk;
+    });
+    if (r) radky.push(r);
+    return radky;
+  }
+  function ramec(x, yy, w, h, vypln, linka) {
+    if (vypln) { g.fillStyle = vypln; g.fillRect(x, yy, w, h); }
+    g.strokeStyle = linka || B.l; g.lineWidth = 1; g.strokeRect(x + 0.5, yy + 0.5, w - 1, h - 1);
+  }
+  function znacka(x, yy, stav) {
+    var s = 10;
+    if (stav === 'nezac') return;
+    g.fillStyle = B.p; g.fillRect(x, yy, s, s);
+    g.fillStyle = B.t;
+    if (stav === 'sam') g.fillRect(x, yy, s, s);
+    else if (stav === 'otazky' || stav === 'opora') g.fillRect(x, yy, s / 2, s);
+    g.strokeStyle = B.t; g.lineWidth = 1.2; g.strokeRect(x + 0.6, yy + 0.6, s - 1.2, s - 1.2);
+  }
+  function oddil(text) { misto(60); verz(text, ml, y + 10, 10.5, B.k, 0.12); y += 20; }
+  function p2(n) { return (n < 10 ? '0' : '') + n; }
+
+  nova();
+  /* hlavička */
+  verz(T.exp.popisek, ml, y + 9, 9.6, B.k, 0.18); y += 17;
+  pismo(30.5, { tucne: true }); g.fillText(T.exp.nadpis, ml, y + 29); y += 42;
+  pismo(14, { barva: B.m }); g.fillText(T.exp.podnadpis, ml, y + 12); y += 25;
+  g.fillStyle = B.t; g.fillRect(ml, y, sw, 2.5); y += 2.5 + 15;
+
+  /* tři boxy: kdo ; kam se dostal ; sebehodnocení */
+  var mez = 23, bw = (sw - 2 * mez) / 3, bh = 92, x1 = ml, x2 = ml + bw + mez, x3 = ml + 2 * (bw + mez), i;
+  ramec(x1, y, bw, bh, B.b); ramec(x2, y, bw, bh, null);
+  g.fillStyle = B.t; g.fillRect(x3, y, bw, bh);
+  verz('Žák / žákyně', x1 + 13, y + 20, 10.5, B.k);
+  var velJmena = 17, radkyJmena;
+  do { pismo(velJmena, { tucne: true }); radkyJmena = zalom(jmeno, bw - 26); velJmena -= 2; } while (radkyJmena.length > 2 && velJmena >= 11);
+  radkyJmena.slice(0, 2).forEach(function (r, j) { g.fillText(r, x1 + 13, y + 42 + j * (velJmena + 6)); });
+  pismo(12, { barva: B.m });
+  g.fillText(kdy.getDate() + '. ' + (kdy.getMonth() + 1) + '. ' + kdy.getFullYear() + ' v ' + kdy.getHours() + ':' + p2(kdy.getMinutes()), x1 + 13, y + bh - 11);
+  verz('Kam se dostal(a)', x2 + 13, y + 20, 10.5, B.k);
+  pismo(17, { tucne: true }); g.fillText('Hotovo ' + S.hotovo + ' z ' + ETAPY.length + ' etap', x2 + 13, y + 43);
+  pismo(12.5); g.fillText('Jádro 1 až 6: ' + (S.jadro >= 6 ? 'hotové' : S.jadro + ' ze 6'), x2 + 13, y + 63);
+  if (KONF.exportCas) g.fillText('Čas práce: ' + casTxt(S.cas), x2 + 13, y + bh - 11);
+  verz('Jak mi to šlo', x3 + 13, y + 20, 10.5, B.n);
+  pismo(24, { tucne: true, barva: B.p }); g.fillText(znamka + ' z 10', x3 + 13, y + 49);
+  var sirkaZn = g.measureText(znamka + ' z 10').width;
+  pismo(12, { barva: B.n }); g.fillText('10 je nejlépe', x3 + 13 + sirkaZn + 10, y + 49);
+  for (i = 0; i < 10; i++) {
+    g.strokeStyle = B.p; g.lineWidth = 1.2;
+    if (i < znamka) { g.fillStyle = B.p; g.fillRect(x3 + 13 + i * 18, y + bh - 26, 13, 13); }
+    else g.strokeRect(x3 + 13.6 + i * 18, y + bh - 25.4, 11.8, 11.8);
+  }
+  y += bh + 20;
+
+  /* tabulka etap */
+  oddil('Etapy');
+  var sl = [24, 196, 150, 68, 128, 70, 60], xs = [ml], rh = 23;
+  for (i = 0; i < sl.length - 1; i++) xs.push(xs[i] + sl[i]);
+  T.exp.sloupce.forEach(function (s, j) { if (s) verz(s, xs[j], y + 9, 9.4, B.k, 0.08); });
+  y += 14; g.fillStyle = B.t; g.fillRect(ml, y, sw, 1.5); y += 1.5;
+  S.radky.forEach(function (r) {
+    misto(rh);
+    var by = y + 16, tl2 = r.stav === 'nezac' ? B.m : B.t;
+    pismo(12, { mono: true, tucne: true, barva: B.k }); g.fillText(String(r.n), xs[0], by);
+    pismo(12.4, { barva: tl2 }); g.fillText(r.nazev, xs[1], by);
+    znacka(xs[2], y + 7, r.stav);
+    pismo(12.4, { barva: tl2 }); g.fillText(T.exp.stavy[r.stav], xs[2] + (r.stav === 'nezac' ? 0 : 16), by);
+    pismo(12.4, { barva: tl2 });
+    g.fillText(KONF.exportCas ? casTxt(r.cas) : '–', xs[3], by);
+    g.fillText(r.ot ? r.ot + ' ; nejvýš ' + r.nej + '. stupeň' : '–', xs[4], by);
+    g.fillText(r.dv ? String(r.dv) : '–', xs[5], by);
+    g.fillText(r.ch ? String(r.ch) : '–', xs[6], by);
+    y += rh; g.fillStyle = B.l; g.fillRect(ml, y - 1, sw, 1);
+  });
+  y += 18;
+
+  /* co šlo ; kde to drhlo */
+  var slo = [], drhlo = [];
+  if (S.sam.length) slo.push('Samostatně, bez otázek: ' + slovemEtapy(S.sam) + '.');
+  if (S.otazky.length) slo.push('S otázkami průvodce: ' + slovemEtapy(S.otazky) + '.');
+  if (S.tipVse) slo.push('Tipy před puštěním vah: ' + S.tipOk + ' z ' + S.tipVse + ' správně.');
+  if (!slo.length) slo.push('Zatím není dokončená žádná etapa.');
+  S.chyby.slice(0, 7).forEach(function (c) { drhlo.push(c.n + '× ' + (T.exp.chyby[c.k] || c.k) + ' (' + slovemEtapy(c.et) + ')'); });
+  if (S.chyby.length > 7) drhlo.push('a další druhy chyb: ' + (S.chyby.length - 7));
+  if (S.opora.length) drhlo.push('Dokončeno až s větší oporou: ' + slovemEtapy(S.opora) + '.');
+  if (S.nejOt) drhlo.push('Nejvíc otázek průvodce: etapa ' + S.nejOt.et + ' (' + S.nejOt.n + ').');
+  if (!drhlo.length) drhlo.push('Aplikace nezachytila žádnou chybu ani otázku.');
+  var bw2 = (sw - mez) / 2, lh = 18.5;
+  function vyskaSeznamu(pole) { pismo(12.6); var h = 0; pole.forEach(function (t) { h += zalom(t, bw2 - 40).length * lh + 4; }); return h; }
+  var hb = 30 + Math.max(vyskaSeznamu(slo), vyskaSeznamu(drhlo)) + 8;
+  misto(hb + 18);
+  function seznam(x, nazev, pole, vypln) {
+    ramec(x, y, bw2, hb, vypln);
+    verz(nazev, x + 13, y + 20, 10.5, B.k);
+    var yy = y + 30;
+    pole.forEach(function (t) {
+      pismo(12.6);
+      var r = zalom(t, bw2 - 40);
+      g.fillStyle = B.t; g.fillRect(x + 14, yy + 7, 5, 5);
+      pismo(12.6);
+      r.forEach(function (ln, j) { g.fillText(ln, x + 27, yy + 13 + j * lh); });
+      yy += r.length * lh + 4;
+    });
+  }
+  seznam(ml, 'Co šlo', slo, B.b);
+  seznam(ml + bw2 + mez, 'Kde to drhlo', drhlo, null);
+  y += hb + 20;
+
+  /* vlastními slovy */
+  oddil('Vlastními slovy');
+  var slova = [{ o: T.exp.otazkaZaver, t: P.texty.zaver }];
+  ['e9a', 'e9b'].forEach(function (id) { if (P.texty[id]) slova.push({ o: T.exp.otazkaE9, t: P.texty[id] }); });
+  slova.forEach(function (s) {
+    var txt = (s.t || '').replace(/\s+/g, ' ').trim(), r;
+    pismo(13.2, { kurziva: !!txt });
+    r = zalom(txt ? '„' + txt + '“' : T.exp.nevyplneno, sw - 14).slice(0, 6);
+    misto(20 + r.length * 19 + 10);
+    pismo(12.6, { tucne: true }); g.fillText(s.o, ml, y + 12); y += 20;
+    g.fillStyle = B.k; g.fillRect(ml, y, 2.5, r.length * 19);
+    r.forEach(function (ln, j) { pismo(13.2, { kurziva: !!txt, barva: txt ? B.t : B.m }); g.fillText(ln, ml + 13, y + 14 + j * 19); });
+    y += r.length * 19 + 12;
+  });
+
+  /* vysvětlivka pro učitele */
+  y += 4;
+  pismo(11.6, { barva: B.m });
+  var leg = zalom(T.exp.legenda, sw);
+  misto(leg.length * 16.5 + 12);
+  g.fillStyle = B.l; g.fillRect(ml, y, sw, 1); y += 9;
+  leg.forEach(function (ln) { pismo(11.6, { barva: B.m }); g.fillText(ln, ml, y + 11); y += 16.5; });
+  return stranky;
+}
+
+/* ---------- události ---------- */
+var tah = null, potlacDo = 0;
+function duchUkaz(t) { var d = $('duch'); d.innerHTML = ikona(t); d.style.display = 'block'; }
+function duchSkryj() { $('duch').style.display = 'none'; var c = document.querySelector('.kolik.cil'); if (c) c.classList.remove('cil'); }
+/* Každá akce přičte čas od té předchozí. Dlouhé mezery se nepočítají. */
+function aktivita() {
+  var t = Date.now(), d = t - A.cas;
+  if (A.pohled === 'plocha' && U && U.def.etapa && U.faze !== 'konec' && d > 0 && d < KONF.pauza) { P.etapy[U.def.etapa].cas += d; A.spina = true; }
+  A.cas = t;
+}
+function ulozKdyzTreba() { if (A.spina && P) { A.spina = false; uloz(); } }
+setInterval(ulozKdyzTreba, 10000);
+window.addEventListener('pagehide', ulozKdyzTreba);
+document.addEventListener('visibilitychange', function () { if (document.hidden) ulozKdyzTreba(); });
+
+document.addEventListener('click', function (e) {
+  aktivita();
+  if (Date.now() < potlacDo) { potlacDo = 0; return; }
+  var t = e.target, b = t.closest ? t.closest('[data-akce]') : null;
+  if (b) { if (!b.disabled && AKCE[b.getAttribute('data-akce')]) AKCE[b.getAttribute('data-akce')](b.getAttribute('data-p')); return; }
+  if (!U || A.pohled !== 'plocha') return;
+  var zs = t.closest('[data-zas]');
+  if (zs) {
+    if (!muzeStavet()) return nelze();
+    var typ = zs.getAttribute('data-zas');
+    U.vyber = (U.vyber && U.vyber.zdroj === 'zas' && U.vyber.t === typ) ? null : { zdroj: 'zas', t: typ };
+    kresliOvladani(); kresliVahyHl();
+    return;
+  }
+  var z = t.closest('[data-z]');
+  if (z) { var c = z.getAttribute('data-z').split(':'); return klikZavazi(c[0], +c[1]); }
+  var k = t.closest('[data-kolik]');
+  if (k) { var q = k.getAttribute('data-kolik').split(':'); return klikKolik(q[0], +q[1]); }
+});
+document.addEventListener('input', function (e) {
+  aktivita();
+  var t = e.target, k = t.getAttribute && t.getAttribute('data-vstup');
+  if (k && U) {
+    if (k === 'radek' || k === 'upr' || k === 'lv' || k === 'pv') {
+      var pos = t.selectionStart, nv = t.value.replace(/-/g, '−').replace(/\*/g, '·');
+      if (nv !== t.value) { t.value = nv; try { t.setSelectionRange(pos, pos); } catch (er) { /* nic */ } }
+    }
+    U.vstupy[k] = t.value;
+    return;
+  }
+  var ex = t.getAttribute && t.getAttribute('data-exp');
+  if (ex) { A.exp[ex] = t.value; return; }
+  var tx = t.getAttribute && t.getAttribute('data-text');
+  if (tx) { P.texty[tx] = t.value; uloz(); }
+});
+document.addEventListener('change', function (e) {
+  var k = e.target.getAttribute && e.target.getAttribute('data-prepni');
+  if (!k || !U || U.def.typ !== 'volne') return;
+  U.volby[k] = e.target.checked;
+  if (k === 'ucinky') U.ukazUcinky = e.target.checked;
+  if (k === 'zapor') {
+    U.zapor = e.target.checked;
+    if (!U.zapor) ['L', 'R'].forEach(function (s) { U.vahy[s] = U.vahy[s].filter(function (z) { return z.p > 0; }); });
+  }
+  U.vyber = null;
+  animuj(cilUhlu()); kresliZapisnik(); hlasStav();
+});
+document.addEventListener('keydown', function (e) {
+  aktivita();
+  var t = e.target;
+  if (e.key === 'Enter' && t.tagName === 'INPUT' && t.getAttribute('data-enter')) { e.preventDefault(); AKCE[t.getAttribute('data-enter')](); return; }
+  if (!U || A.pohled !== 'plocha') return;
+  if (e.key === 'Escape' && U.vyber) { U.vyber = null; kresliVahyHl(); kresliOvladani(); return; }
+  var k = t.closest ? t.closest('.kolik') : null;
+  if (!k) return;
+  var c = k.getAttribute('data-kolik').split(':'), s = c[0], p = +c[1];
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); klikKolik(s, p); }
+  else if (e.key === 'Delete' || e.key === 'Backspace') {
+    e.preventDefault();
+    if (!muzeStavet()) return nelze();
+    var i = posledniNaKoliku(s, p);
+    if (i >= 0) sundej(s, i);
+  } else if (e.key.indexOf('Arrow') === 0) {
+    e.preventDefault();
+    var osa = (s === 'L' ? -1 : 1) * Math.abs(p), zadni = p < 0;
+    if (e.key === 'ArrowLeft') osa = osa - 1 === 0 ? -1 : osa - 1;
+    if (e.key === 'ArrowRight') osa = osa + 1 === 0 ? 1 : osa + 1;
+    if (e.key === 'ArrowUp' && U.zapor) zadni = true;
+    if (e.key === 'ArrowDown') zadni = false;
+    osa = Math.max(-KONF.maxPozice, Math.min(KONF.maxPozice, osa));
+    var cilK = (osa < 0 ? 'L' : 'R') + ':' + (zadni ? -Math.abs(osa) : Math.abs(osa));
+    A.kolik = cilK;
+    kresliVahyHl();
+    A.kolik = cilK;
+    var n = $('k-' + cilK.replace(':', '-'));
+    if (n) n.focus();
+  }
+});
+document.addEventListener('focusin', function (e) {
+  var k = e.target.closest ? e.target.closest('.kolik') : null;
+  if (k) A.kolik = k.getAttribute('data-kolik');
+});
+document.addEventListener('pointerdown', function (e) {
+  aktivita();
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  if (!U || A.pohled !== 'plocha' || !muzeStavet()) return;
+  var z = e.target.closest ? e.target.closest('[data-z]') : null, zs = e.target.closest ? e.target.closest('[data-zas]') : null;
+  if (z) { var c = z.getAttribute('data-z').split(':'); tah = { zdroj: 'vahy', s: c[0], i: +c[1], t: U.vahy[c[0]][+c[1]].t, x: e.clientX, y: e.clientY, hybe: false }; }
+  else if (zs) tah = { zdroj: 'zas', t: zs.getAttribute('data-zas'), x: e.clientX, y: e.clientY, hybe: false };
+});
+document.addEventListener('pointermove', function (e) {
+  if (!tah) return;
+  if (!tah.hybe) {
+    if (Math.abs(e.clientX - tah.x) + Math.abs(e.clientY - tah.y) < 8) return;
+    tah.hybe = true; duchUkaz(tah.t);
+  }
+  var d = $('duch');
+  d.style.transform = 'translate(' + e.clientX + 'px,' + e.clientY + 'px)';
+  var k = kolikNa(e.clientX, e.clientY), stary = document.querySelector('.kolik.cil'), novy = k && !k.mimo ? $('k-' + k.s + '-' + k.p) : null;
+  if (stary && stary !== novy) stary.classList.remove('cil');
+  if (novy) novy.classList.add('cil');
+});
+function konecTahu(e, zrusit) {
+  if (!tah) return;
+  var t = tah;
+  tah = null;
+  if (!t.hybe) return;
+  duchSkryj();
+  potlacDo = Date.now() + 80;
+  if (zrusit || !muzeStavet()) return;
+  var k = kolikNa(e.clientX, e.clientY);
+  if (k && !k.mimo) { if (t.zdroj === 'zas') poloz(k.s, k.p, t.t); else presun(t.s, t.i, k.s, k.p); }
+  else if (k && k.mimo && t.zdroj === 'vahy') sundej(t.s, t.i);
+}
+document.addEventListener('pointerup', function (e) { konecTahu(e, false); });
+document.addEventListener('pointercancel', function (e) { konecTahu(e, true); });
+
+/* Po 75 sekundách nečinnosti se průvodce nenápadně nabídne. */
+setInterval(function () {
+  if (A.pohled !== 'plocha' || !U || U.def.typ === 'volne' || U.hotovo || U.faze === 'konec' || U.pr.nabidka) return;
+  if (U.faze === 'ukazka' && !U.otazka) return;
+  if (Date.now() - A.cas > KONF.necinnost) { U.pr.nabidka = true; A.cas = Date.now(); kresliPruvodce(); }
+}, 5000);
+
+/* ---------- start ---------- */
+function start() {
+  var q = '';
+  try { q = window.location.search || ''; } catch (e) { q = ''; }
+  A.ucitel = /[?&]ucitel=1(&|$)/.test(q);
+  P = Uloziste.nacti() || novyPostup();
+  if (/[?&]test=1(&|$)/.test(q)) {
+    var v = M.testy();
+    window.console.log('Rovnice na vahách – testy modelu: ' + v.ok + ' v pořádku ; ' + v.chyby.length + ' chyb');
+    v.chyby.forEach(function (c) { window.console.error('CHYBA: ' + c); });
+    window.RovniceNaVahach = { M: M, KONF: KONF, ULOHY: ULOHY, T: T, vysledekTestu: v };
+  }
+  ukaz('uvod');
+}
+start();
+})();
+</script>
+</body>
+</html>
