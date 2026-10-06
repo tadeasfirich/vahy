@@ -239,7 +239,6 @@ var KONF = {
   uhel: 7,                        // náklon puštěných vah ve stupních
   uhelZapor: 4,                   // menší náklon, když je vidět i záporné rameno
   animace: 450,                   // délka náklonu v ms
-  krokUkazky: 800,                // prodleva mezi kroky, které dělá aplikace
   necinnost: 75000,               // po kolika ms nečinnosti se průvodce nabídne
   pauza: 90000,                   // delší mezera mezi akcemi se do času práce nepočítá
   exportCas: true,                // má být v PDF čas práce (v aplikaci se čas neukazuje)
@@ -570,7 +569,13 @@ var T = {
     nevyplneno: 'nevyplněno',
     legenda: 'Čas je jen aktivní práce s aplikací. Otázky průvodce mají čtyři stupně: 1 kam mířím ; 2 kam se dívat ; 3 zúžení volby ; 4 krok předvedený na jiných vahách. Dvojče je podobná úloha s větší oporou. Chyby aplikace poznává z akcí na vahách a ze zapsaných řádků.'
   },
+  /* Popisky ke krokování: začátek ; změna vlevo ; změna vpravo ; puštění vah. */
+  kroky: ['Váhy jsou držené. Krokuj tlačítkem „Další krok“, tempo si určuješ ty.',
+          'Změna vlevo. Čárkovaný obrys ukazuje, co tam bylo.',
+          'Změna vpravo. Porovnej ji se změnou vlevo.',
+          'Váhy jsou puštěné.'],
   pr: {
+    ukazkaKroky: 'Tohle jsou jiné váhy s jinými čísly. Co se na nich krok za krokem mění?',
     nabidka: 'Chceš otázku, která ti pomůže?',
     nejdrivTip: 'Co myslíš, že váhy udělají? Nejdřív tipni a pak je pusť.',
     jednaStrana: 'Co se stalo s vahami? Co musíš udělat na druhé straně, aby se vrátily?',
@@ -584,6 +589,7 @@ var T = {
     znamenko: 'Závaží na záporné pozici stranu nadlehčuje. Jaký účinek má na pozici −{p}: kladný, nebo záporný?',
     znamenkoZapis: 'Zkus roznásobit každý člen závorky zvlášť. Jaké znaménko vyjde u čísla?',
     jenJedna: 'Jedna strana tvého řádku se změnila, druhá ne. Co se s ní má stát?',
+    zkouskaPust: 'Tohle jsou původní váhy s tvým číslem místo L. Co udělají, když je pustíš?',
     spatnyVysledek: 'Tohle jsou původní váhy s tvým číslem. Kolik vyjde vlevo a kolik vpravo?',
     radekVahy: 'Tohle jsou váhy podle tvého řádku. Pusť je.',
     radekPorovnej: 'Porovnej svůj řádek s předchozím. Co se změnilo vlevo a co vpravo?',
@@ -1635,9 +1641,15 @@ function htmlVeta(d) {
 }
 function htmlRes() {
   if (U.hotovo) return '<p class="vysledek">L váží ' + U.x + '. Zkouška na původních vahách vyšla.</p><div class="rada">' + tl('Dál', 'dal', { c: 'hlavni' }) + '</div>';
-  if (U.faze === 'ukazka' && U.otazka) {
-    return '<div class="rada" role="group" aria-label="' + U.otazka.text + '"><strong>' + U.otazka.text + '</strong>' +
-      U.otazka.volby.map(function (v, i) { return tl(v, 'ukazkaVolba', { p: i }); }).join('') + '</div>';
+  if (U.faze === 'ukazka' && U.kroky) {
+    var k = U.kroky, posl = k.stavy.length - 1;
+    var h = '<div class="rada">' + tl('Krok zpět', 'krokZpet', { dis: k.i === 0, c: 'maly' }) + tl('Další krok', 'krokDal', { dis: k.i === posl, c: 'hlavni' }) +
+      '<span class="stitekPole">' + (k.i === 0 ? 'začátek' : 'krok ' + k.i + ' ze ' + posl) + '</span><span role="status">' + T.kroky[k.i] + '</span></div>';
+    if (U.otazka) {
+      h += '<div class="rada" role="group" aria-label="' + U.otazka.text + '"><strong>' + U.otazka.text + '</strong>' +
+        U.otazka.volby.map(function (v, i) { return tl(v, 'ukazkaVolba', { p: i }); }).join('') + '</div>';
+    } else if (U.def.opora === 'ukazka') h += '<div class="rada" style="min-height:44px" aria-hidden="true"></div>';   /* místo pro otázku, ať váhy neposkočí */
+    return h;
   }
   if (U.faze === 'prace' && !U.nahled && M.izolovano(M.rovVah(U.zaklad))) {
     return '<div class="rada"><label class="stitekPole" for="v-odp">L váží</label><input type="text" class="kratky" id="v-odp" data-vstup="odp" data-enter="zkouska" inputmode="numeric" autocomplete="off" value="' +
@@ -1702,12 +1714,17 @@ function kresliOvladani() {
       });
       h += '</div>' + tl('Sundat', 'sundat', { dis: !(U.vyber && U.vyber.zdroj === 'vahy'), c: 'maly' });
     }
-    var hotovaZk = n && n.typ === 'hotovo';
-    h += tl('Držet', 'drz', { press: !s.pusteno, dis: hotovaZk }) + tl('Pustit váhy', 'pust', { press: s.pusteno, c: s.pusteno ? '' : 'hlavni', dis: hotovaZk });
+    if (n && n.kroky) {
+      el.innerHTML = h + tl('Krok zpět', 'krokZpet', { dis: n.kroky.i === 0, c: 'maly' }) +
+        tl('Další krok', 'krokDal', { dis: n.kroky.i === n.kroky.stavy.length - 1, c: 'hlavni' }) + tl('Zpět k úloze', 'zpet');
+      return;
+    }
+    var hotovaZk = n && n.typ === 'hotovo', krokuje = !n && U.faze === 'ukazka' && !!U.kroky;   /* při krokování pouští váhy aplikace */
+    if (!krokuje) h += tl('Držet', 'drz', { press: !s.pusteno, dis: hotovaZk }) + tl('Pustit váhy', 'pust', { press: s.pusteno, c: s.pusteno ? '' : 'hlavni', dis: hotovaZk });
     if (n) {
       if (n.typ !== 'ukaz' && !hotovaZk) h += tl('Zpět k úloze', 'zpet');
     } else if (!d.zamceno && d.typ !== 'zapis' && !U.hotovo) {
-      if (d.typ === 'res') h += tl('Vrátit krok', 'vrat', { c: 'maly tichy' });
+      if (d.typ === 'res' && !krokuje) h += tl('Vrátit krok', 'vrat', { c: 'maly tichy' });
       if (d.typ !== 'volne') h += tl('Znovu', 'znovu', { c: 'maly tichy' });
     }
     el.innerHTML = h;
@@ -1847,33 +1864,41 @@ function ubylo(stare, nove) {
   stare.forEach(function (z) { var i = zb.indexOf(z.p + z.t); if (i >= 0) zb.splice(i, 1); else out.push({ p: z.p, t: z.t }); });
   return out;
 }
+function stavyKroku(pL, pR, nL, nR) {
+  var dL = ubylo(pL, nL), dR = ubylo(pR, nR);
+  return [{ L: pL, R: pR, dL: [], dR: [], pusteno: false }, { L: nL, R: pR, dL: dL, dR: [], pusteno: false },
+          { L: nL, R: nR, dL: dL, dR: dR, pusteno: false }, { L: nL, R: nR, dL: dL, dR: dR, pusteno: true }];
+}
 function spustUkazku(typSit) {
   var kand = UKAZKY[typSit], akt = JSON.stringify(aktRov()), uk = kand[0];
   for (var i = 0; i < kand.length; i++) {
     if (JSON.stringify(M.rovVah({ L: M.rozbal(kand[i].leva), R: M.rozbal(kand[i].prava) })) !== akt) { uk = kand[i]; break; }
   }
-  var n = { typ: 'ukazka', vahy: { L: M.rozbal(uk.leva), R: M.rozbal(uk.prava) }, x: uk.x, zapor: !!uk.zapor, pusteno: false, popis: 'Jiné váhy, jiná čísla', duchove: { L: [], R: [] } };
-  U.nahled = n; U.pr.zprava = null; U.pr.volby = null; A.uhel = 0;
+  U.nahled = { typ: 'ukazka', x: uk.x, zapor: !!uk.zapor, text: uk.text, popis: '',
+               kroky: { i: 0, stavy: stavyKroku(M.rozbal(uk.leva), M.rozbal(uk.prava), M.rozbal(uk.po.leva), M.rozbal(uk.po.prava)) } };
+  A.uhel = 0;
+  krokNahledu(0);
+  rekni(T.pr.ukazkaKroky);
+  fokus('a-krokDal');
+}
+function krokNahledu(i) {
+  var n = U.nahled, k = n.kroky, posl = k.stavy.length - 1, s;
+  i = Math.max(0, Math.min(posl, i));
+  s = k.stavy[i]; k.i = i;
+  n.vahy = { L: M.rozbal(s.L), R: M.rozbal(s.R) }; n.duchove = { L: s.dL, R: s.dR }; n.pusteno = s.pusteno;
+  n.popis = 'Jiné váhy, jiná čísla – ' + (i === 0 ? 'začátek' : 'krok ' + i + ' ze ' + posl);
   kresliPlochu();
-  var u0 = U, k = KONF.krokUkazky;
-  function po(ms, fn) { setTimeout(function () { if (U === u0 && U.nahled === n) fn(); }, ms); }
-  po(k, function () { n.duchove.L = ubylo(n.vahy.L, M.rozbal(uk.po.leva)); n.vahy.L = M.rozbal(uk.po.leva); kresliVahyHl(); });
-  po(2 * k, function () { n.duchove.R = ubylo(n.vahy.R, M.rozbal(uk.po.prava)); n.vahy.R = M.rozbal(uk.po.prava); kresliVahyHl(); });
-  po(3 * k, function () { n.pusteno = true; animuj(cilUhlu()); kresliOvladani(); hlasStav(); rekni(uk.text); });
+  animuj(cilUhlu());
+  if (i === posl) { rekni(n.text); fokus('a-zpet'); }
 }
 
 /* ---------- běh úlohy ---------- */
 function novyBeh(def) {
   var b = { def: def, dvojce: false, x: def.x, zapor: !!def.zapor, vahy: { L: M.rozbal(def.leva), R: M.rozbal(def.prava) }, radky: [], faze: 'prace',
             pusteno: false, tip: null, volba: null, vstupy: {}, uroven: 0, urovenF: 0, maxNapoved: 0, pokusy: {}, nahled: null, vyber: null,
-            pr: { zprava: null, volby: null, tlacitko: null, nabidka: false }, vysledek: null, hotovo: false, duchove: null, plan: null };
+            pr: { zprava: null, volby: null, tlacitko: null, nabidka: false }, vysledek: null, hotovo: false, duchove: null, kroky: null };
   b.puvod = M.kopie(b.vahy); b.zaklad = M.kopie(b.vahy);
   return b;
-}
-function naplanuj(fn, ms) {
-  var u0 = U;
-  U.plan = fn;
-  setTimeout(function () { if (U === u0 && U.plan === fn) { U.plan = null; fn(); } }, ms);
 }
 function spustUlohu(def, jeDvojce) {
   U = novyBeh(def);
@@ -1884,8 +1909,7 @@ function spustUlohu(def, jeDvojce) {
     if (def.surovy) U.radky.push({ txt: M.fmtSurovy(U.vahy.L) + ' = ' + M.fmtSurovy(U.vahy.R), rov: M.rovQ(rov) });
     if ((!def.skryjUpraveny && !def.rozepis) || !U.radky.length) U.radky.push({ rov: M.rovQ(rov) });
     if (def.rozepis) { U.faze = 'rozepis'; if (def.opora === 'spolu') U.pr.zprava = T.pr.rozepis; }
-    else if (def.opora === 'ukazka') { U.faze = 'ukazka'; naplanuj(ukazkaKrok, 1300); }
-    else if (def.opora === 'spolu' && def.prvniKrok) { U.faze = 'ukazka'; naplanuj(prvniKrok, 1300); }
+    else if (def.opora === 'ukazka' || (def.opora === 'spolu' && def.prvniKrok)) U.faze = 'ukazka';
     else if (def.opora === 'spolu') U.pr.zprava = T.nap.res[1];
   } else if (def.typ === 'zapis') {
     U.radky.push({ txt: M.hezky(def.rovnice), rov: M.ctiRovnici(def.rovnice) });
@@ -1897,6 +1921,7 @@ function spustUlohu(def, jeDvojce) {
   }
   ukaz('plocha');
   kresliPlochu();
+  if (def.typ === 'res' && U.faze === 'ukazka') { if (def.opora === 'ukazka') ukazkaKrok(); else prvniKrok(); }
   if (def.typ === 'zapis') fokus('v-upr');
   if (def.typ === 'res' && def.rozepis) fokus('v-radek');
 }
@@ -2156,19 +2181,24 @@ function pustRes() {
   kresliOvladani(); kresliUkol(); hlasStav();
 }
 
-/* ---------- kroky, které dělá aplikace (ukázka, první krok) ---------- */
+/* ---------- kroky, které dělá aplikace (ukázka, první krok) ----------
+   Nic neběží samo. Žák si kroky posouvá tlačítky „Další krok“ a „Krok zpět“. */
 function krokAplikace(dz, potom) {
-  var z = !!U.zapor, nl = M.aplikuj(U.vahy.L, dz.a, dz.b, z), nr = M.aplikuj(U.vahy.R, dz.a, dz.b, z), k = KONF.krokUkazky;
-  if (!nl || !nr) { U.faze = 'prace'; kresliPlochu(); return; }
-  U.pusteno = false; U.duchove = { L: [], R: [] }; U.skryjPocitadlo = U.def.opora === 'ukazka'; A.uhel = 0;
+  var z = !!U.zapor, st = M.kopie(U.vahy), nl = M.aplikuj(st.L, dz.a, dz.b, z), nr = M.aplikuj(st.R, dz.a, dz.b, z);
+  if (!nl || !nr) { U.faze = 'prace'; U.kroky = null; kresliPlochu(); return; }
+  U.kroky = { i: 0, potom: potom, otazka: null, stavy: stavyKroku(st.L, st.R, nl, nr) };
+  U.skryjPocitadlo = U.def.opora === 'ukazka';
+  nastavKrok(0);
+  fokus('a-krokDal');
+}
+function nastavKrok(i) {
+  var k = U.kroky, s = k.stavy[i];
+  k.i = i;
+  U.vahy = { L: M.rozbal(s.L), R: M.rozbal(s.R) }; U.duchove = { L: s.dL, R: s.dR };
+  U.pusteno = s.pusteno; U.otazka = null; U.vyber = null;
   kresliPlochu();
-  naplanuj(function () {
-    U.duchove.L = ubylo(U.vahy.L, nl); U.vahy.L = nl; kresliVahyHl(); kresliOvladani();
-    naplanuj(function () {
-      U.duchove.R = ubylo(U.vahy.R, nr); U.vahy.R = nr; kresliVahyHl(); kresliOvladani();
-      naplanuj(function () { U.pusteno = true; animuj(cilUhlu()); kresliOvladani(); hlasStav(); potom(); }, k);
-    }, k);
-  }, k);
+  animuj(cilUhlu());
+  if (i === k.stavy.length - 1) k.potom();
 }
 function krokZeSituace(s) {
   if (s.typ === 'obe') return { a: -s.k, b: 0 };
@@ -2183,11 +2213,14 @@ function ukazkaKrok() {
     return;
   }
   krokAplikace(dz, function () {
-    var spr, v;
-    if (dz.a !== 0) { spr = clenTxt(dz.a); v = [spr, String(Math.abs(dz.a)), clenTxt(Math.abs(dz.a) + 1)]; }
-    else { spr = String(Math.abs(dz.b)); v = [spr, 'x', String(Math.abs(dz.b) + 1)]; }
-    v = otoc(jedinecne(v), U.radky.length);
-    U.otazka = { text: (dz.a > 0 || dz.b > 0) ? 'Co na obou stranách přibylo?' : T.pr.ukazkaOtazka, volby: v, spravne: v.indexOf(spr), dz: dz, chyb: 0 };
+    var spr, v, k = U.kroky;
+    if (!k.otazka) {
+      if (dz.a !== 0) { spr = clenTxt(dz.a); v = [spr, String(Math.abs(dz.a)), clenTxt(Math.abs(dz.a) + 1)]; }
+      else { spr = String(Math.abs(dz.b)); v = [spr, 'x', String(Math.abs(dz.b) + 1)]; }
+      v = otoc(jedinecne(v), U.radky.length);
+      k.otazka = { text: (dz.a > 0 || dz.b > 0) ? 'Co na obou stranách přibylo?' : T.pr.ukazkaOtazka, volby: v, spravne: v.indexOf(spr), dz: dz, chyb: 0 };
+    }
+    U.otazka = k.otazka;
     kresliUkol(); fokus('a-ukazkaVolba-0');
   });
 }
@@ -2198,7 +2231,7 @@ function prvniKrok() {
     U.radky[U.radky.length - 1].upr = M.fmtZmena(M.vyrazQ(dz));
     U.zaklad = M.kopie(U.vahy);
     U.radky.push({ rov: M.rovQ(M.rovVah(U.vahy)) });
-    U.faze = 'prace';
+    U.faze = 'prace'; U.kroky = null;
     kresliPlochu();
     rekni(T.pr.prvniKrok);
   });
@@ -2215,6 +2248,22 @@ function vyresenoNaVahach(n) {
   }
   U.radky.push({ txt: 'Zkouška: L váží ' + n + ' ; vlevo ' + M.ucinek(nh.vahy.L, n) + ' ; vpravo ' + M.ucinek(nh.vahy.R, n), trida: 'zk' });
   kresliZapisnik(); mlc();
+}
+/* Zkoušku pouští žák sám. Teprve potom se ukáže, jestli jeho číslo sedí. */
+function vyhodnotZkousku() {
+  var nh = U.nahled, n = nh.x, nak = M.naklon(nh.vahy, n), s = M.situace(M.rovVah(U.zaklad));
+  nh.ceka = false; nh.pusteno = true;
+  if (nak === 0) vyresenoNaVahach(n);
+  else {
+    var dvax = s.typ === 'nasob' && n === s.c - s.a && s.a >= 2 && s.a <= 5;
+    nezdar('vysledek', dvax ? 'dvax' : 'vysledek');
+    if (dvax) {
+      rekni(dopln(T.pr.dvaXplus, { a: s.a, disky: slovyDisky(s.a) }), { tlacitko: { text: 'Vyzkoušet na volných vahách', akce: 'pokusVolne', p: 'dvax' + s.a } });
+    } else rekni(T.pr.spatnyVysledek);
+  }
+  animuj(cilUhlu());
+  kresliOvladani(); kresliUkol(); hlasStav();
+  fokus(nak === 0 ? 'a-dal' : 'a-zpet');
 }
 function chybaRadku(r, ocek, pred) {
   nezdar('radek', false);
@@ -2286,7 +2335,6 @@ function zpetZVolnych() {
   if (o && o.U) {
     U = o.U; A.uhel = cilUhlu();
     ukaz('plocha'); kresliPlochu();
-    if (U.plan) naplanuj(U.plan, 500);
   } else { U = null; ukaz(o ? o.pohled : 'uvod'); }
 }
 
@@ -2355,6 +2403,7 @@ var AKCE = {
     if (U.def.typ === 'volne') kresliZapisnik();
   },
   pust: function () {
+    if (U.nahled && U.nahled.typ === 'zkouska' && U.nahled.ceka) return vyhodnotZkousku();
     if (U.nahled) { U.nahled.pusteno = true; animuj(cilUhlu()); kresliOvladani(); hlasStav(); return; }
     var typ = U.def.typ;
     if (typ === 'pokus' && !U.hotovo) return pustPokus();
@@ -2429,17 +2478,29 @@ var AKCE = {
   xPlus: function () { zmenX(1); },
   xMinus: function () { zmenX(-1); },
   vyprazdnit: function () { U.vahy = { L: [], R: [] }; poUprave(); },
+  krokDal: function () {
+    if (!U) return;
+    if (U.nahled && U.nahled.kroky) return krokNahledu(U.nahled.kroky.i + 1);
+    var k = U.kroky;
+    if (k && U.faze === 'ukazka' && k.i < k.stavy.length - 1) nastavKrok(k.i + 1);
+  },
+  krokZpet: function () {
+    if (!U) return;
+    if (U.nahled && U.nahled.kroky) return krokNahledu(U.nahled.kroky.i - 1);
+    var k = U.kroky;
+    if (k && U.faze === 'ukazka' && k.i > 0) nastavKrok(k.i - 1);
+  },
   ukazkaVolba: function (i) {
     var o = U.otazka;
     if (!o) return;
     if (+i === o.spravne) {
-      U.otazka = null; U.duchove = null; U.skryjPocitadlo = false;
+      U.otazka = null; U.kroky = null; U.duchove = null; U.skryjPocitadlo = false;
       U.radky[U.radky.length - 1].upr = M.fmtZmena(M.vyrazQ(o.dz));
       U.zaklad = M.kopie(U.vahy);
       U.radky.push({ rov: M.rovQ(M.rovVah(U.vahy)) });
       U.pr.zprava = null; U.pr.nabidka = false; U.urovenF = 0;
       kresliPlochu();
-      naplanuj(ukazkaKrok, 1100);
+      ukazkaKrok();
     } else {
       o.chyb++; zaznamChyby('ukazka');
       if (o.chyb >= 2) { U.skryjPocitadlo = false; kresliOvladani(); rekni(T.pr.ukazka2); } else rekni(T.pr.ukazka1);
@@ -2450,26 +2511,12 @@ var AKCE = {
     var q = M.ctiCislo(U.vstupy.odp || '');
     if (!q || q.d !== 1 || q.n < 0 || q.n > 99) { U.pozn = T.pozn.cislo; kresliUkol(); return fokus('v-odp'); }
     U.pozn = null;
-    var n = q.n, nh = { typ: 'zkouska', vahy: M.kopie(U.puvod), x: n, cisloL: n, zapor: !!U.zapor, pusteno: false, popis: 'Zkouška: původní váhy, L váží ' + n };
-    U.nahled = nh; A.uhel = 0;
+    var n = q.n;
+    U.nahled = { typ: 'zkouska', ceka: true, vahy: M.kopie(U.puvod), x: n, cisloL: n, zapor: !!U.zapor, pusteno: false, popis: 'Zkouška: původní váhy, L váží ' + n };
+    A.uhel = 0;
     kresliPlochu();
-    var u0 = U;
-    setTimeout(function () {
-      if (U !== u0 || U.nahled !== nh) return;
-      nh.pusteno = true;
-      var nak = M.naklon(nh.vahy, n), s = M.situace(M.rovVah(U.zaklad));
-      if (nak === 0) vyresenoNaVahach(n);
-      else {
-        var dvax = s.typ === 'nasob' && n === s.c - s.a && s.a >= 2 && s.a <= 5;
-        nezdar('vysledek', dvax ? 'dvax' : 'vysledek');
-        if (dvax) {
-          rekni(dopln(T.pr.dvaXplus, { a: s.a, disky: slovyDisky(s.a) }), { tlacitko: { text: 'Vyzkoušet na volných vahách', akce: 'pokusVolne', p: 'dvax' + s.a } });
-        } else rekni(T.pr.spatnyVysledek);
-      }
-      animuj(cilUhlu());
-      kresliOvladani(); kresliUkol(); hlasStav();
-      fokus(nak === 0 ? 'a-dal' : 'a-zpet');
-    }, REDUK ? 50 : 700);
+    rekni(T.pr.zkouskaPust);
+    fokus('a-pust');
   },
   zapsat: function () {
     var d = U.def;
